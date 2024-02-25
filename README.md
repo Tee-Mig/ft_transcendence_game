@@ -12,3 +12,6 @@ Les choses a regler:
 -probleme4: rendre le pong responsive -> adapter le ratio pour que la balle ai la meme trajectoire pour n'importe quelle resolution (creer un setter dans PongData pour ne pas changer la position de la balle et des joueurs)<br><br>
 -probleme5: initialiser nouveau jeu dans partie server(sinon le server gere bien les parametres apres)<br><br>
 -probleme6: regler les latences entre 2 joueurs (dans updateGame, draw, movePlayer, moveBall partie front)<br><br>
+
+front -> chemin du fichier principal dans "web-pong/src/components/Front.tsx"<br><br>
+back -> chemin du fichier principal dans "server-pong/src/gateway/back.ts"<br><br>
