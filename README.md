@@ -1,5 +1,10 @@
 # ft_transcendence_game
 
+Commandes: <br>
+-server(dans server-pong): pnpm run start:dev<br><br>
+-client(dans web-pong): pnpm start start:dev
+-tailwindcss(dans web-pong): pnpm run dev
+
 Les choses a regler:
 -probleme1: reinitialiser correctement les donnees du Pong (dans goToWelcomePage partie front)<br><br>
 -probleme2: j'arrive pas a initialiser une variable et la changer pour notifier si un joueur est parti avec React<br><br>
