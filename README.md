@@ -3,7 +3,7 @@
 Commandes: <br>
 -server(dans server-pong): pnpm run start:dev<br>
 -client(dans web-pong): pnpm start start:dev<br>
--tailwindcss(dans web-pong): pnpm run dev<br>
+-tailwindcss(dans web-pong): pnpm run dev<br><br>
 
 Les choses a regler:
 -probleme1: reinitialiser correctement les donnees du Pong (dans goToWelcomePage partie front)<br><br>
