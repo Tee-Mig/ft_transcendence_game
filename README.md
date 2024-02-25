@@ -1,9 +1,9 @@
 # ft_transcendence_game
 
 Commandes: <br>
--server(dans server-pong): pnpm run start:dev<br><br>
--client(dans web-pong): pnpm start start:dev
--tailwindcss(dans web-pong): pnpm run dev
+-server(dans server-pong): pnpm run start:dev<br>
+-client(dans web-pong): pnpm start start:dev<br>
+-tailwindcss(dans web-pong): pnpm run dev<br>
 
 Les choses a regler:
 -probleme1: reinitialiser correctement les donnees du Pong (dans goToWelcomePage partie front)<br><br>
