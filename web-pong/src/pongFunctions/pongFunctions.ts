@@ -6,7 +6,7 @@ export function checkBallBoundsY(nextPositionBallY: number, pongData: PongData |
 
 export function resetGame(direction: number, pongData: PongData | undefined) {
 	pongData!._ballProperties = new BallProperties(pongData!._pongCanvasWidth, pongData!._pongCanvasHeight,
-		pongData!._playerDefaultProperties._playerWidth, undefined, direction, undefined, pongData!._mode);
+		pongData!._playerDefaultProperties._playerWidth, pongData!._ballSpeed, direction, undefined, pongData!._mode);
 }
 
 export function checkPlayerBounds(nextPositionPlayerY: number, pongData: PongData): boolean {

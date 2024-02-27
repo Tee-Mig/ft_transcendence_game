@@ -1,14 +1,11 @@
 import { OnModuleInit } from "@nestjs/common";
-import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server } from 'socket.io'
 import { GameData } from '../types/types'
-import { info } from "console";
 import { PongData } from "src/classes/Classes";
 import { checkBallBoundsY, checkBallCollision, resetGame, updateDirectionPlayer1, updateDirectionPlayer2, whereBallHitPlayer } from "src/pongFunctions/pongFunctions";
 import { setInterval } from "timers";
-import { elementAt } from "rxjs";
-import { emit } from "process";
-import { Socket } from "dgram";
+import { Interval } from "@nestjs/schedule";
 
 
 @WebSocketGateway({
@@ -20,9 +17,23 @@ export class MyGateway implements OnModuleInit {
 	server: Server;
 
 	// *Pong settings
-	endScore: number = 10; // *score needed to win game
-	ballSpeed: number = 7; // TODO probleme5: initialiser dans server ?
-	mode: string = "normal"; // *game mode(normal or rainbow)
+	defaultWindowResolution: { winWidth: number, winHeight: number } = {
+		winWidth: 1920,
+		winHeight: 1080
+	}
+	mode: string = "normal"; // *mode de jeu(normal or rainbow)
+	ballSpeed: number = 1; // *vitesse de la balle
+	player1Speed: number = 1; // *vitesse joueur 1
+	player2Speed: number = 1; // *vitesse joueur 2
+	sizePlayer1: number = 1;
+	sizePlayer2: number = 1;
+	colorBackground: string = "#252930";
+	colorPlayer1: string = "#FF14FB";
+	colorPlayer2: string = "#FF14FB";
+	colorBall: string = "#FF14FB";
+	colorScoreAndCenterLine: string = "#FF14FB";
+	endScore: number = 11; // *score avant la fin d'une partie
+	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
 	gameData: GameData[] = []; // *store all games of Pong
 	playersList: { id: string, name: string }[] = []; // *matchmaking queue
@@ -57,32 +68,46 @@ export class MyGateway implements OnModuleInit {
 				this.playersList.push(infoPlayer);
 				if (this.playersList.length >= 2) {
 
+
 					let p1Obj: {
 						p1Info: { id: string, name: string },
 						p1Side: string,
 						sequenceNumber: number,
-						pongData: PongData
 					} = {
 						p1Info: this.playersList[0],
 						p1Side: "right",
 						sequenceNumber: 0,
-						pongData: undefined
 					}
 					let p2Obj: {
 						p2Info: { id: string, name: string },
 						p2Side: string,
 						sequenceNumber: number,
-						pongData: PongData
 					} = {
 						p2Info: this.playersList[1],
 						p2Side: "left",
 						sequenceNumber: 0,
-						pongData: undefined
 					}
 
 					let PlayersObj: GameData = {
 						p1: p1Obj,
 						p2: p2Obj,
+						pongData: new PongData(
+							this.defaultWindowResolution.winWidth,
+							this.defaultWindowResolution.winHeight,
+							this.mode,
+							this.ballSpeed,
+							this.player1Speed,
+							this.player2Speed,
+							this.sizePlayer1,
+							this.sizePlayer2,
+							this.colorBackground,
+							this.colorPlayer1,
+							this.colorPlayer2,
+							this.colorBall,
+							this.colorScoreAndCenterLine,
+							this.endScore,
+							this.ballDirectionBeginning
+						)
 					}
 					this.gameData.push(PlayersObj);
 					this.playersList.splice(0, 2);
@@ -91,64 +116,87 @@ export class MyGateway implements OnModuleInit {
 				}
 			})
 
-			socket.on('updatePlayers', (gameDataFront: GameData) => {
-				let idGame = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === gameDataFront.p1.p1Info.id && element.p2.p2Info.id === gameDataFront.p2.p2Info.id);
-				if (idGame !== -1) {
-					if (this.gameData[idGame].p1.p1Info.id === socket.id) {
-						this.gameData[idGame].p1.pongData = gameDataFront.p1.pongData;
-					}
-					else if (this.gameData[idGame].p2.p2Info.id === socket.id) {
-						this.gameData[idGame].p2.pongData = gameDataFront.p2.pongData;
+			socket.on('updateGame', (gameDataFront: GameData) => {
+				if (gameDataFront) {
+					let idGame = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === gameDataFront.p1.p1Info.id && element.p2.p2Info.id === gameDataFront.p2.p2Info.id);
+					if (idGame !== -1) {
+						this.gameData[idGame].pongData = gameDataFront.pongData;
 					}
 				}
 			})
 
-			// TODO notifier si le jouer en face a refuse un retry(_retry est egal a 2 ?)
 			socket.on('askRetry', (gameDataFront: GameData) => {
 				if (gameDataFront) {
 					let idGame = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === gameDataFront.p1.p1Info.id && element.p2.p2Info.id === gameDataFront.p2.p2Info.id);
 					if (idGame !== -1) {
-
-						if (this.gameData[idGame].p1.pongData && this.gameData[idGame].p1.p1Info.id == socket.id) {
-							if (gameDataFront.p1.pongData._player1Properties._retry > 0) {
-								this.gameData[idGame].p1.pongData._player1Properties._retry = gameDataFront.p1.pongData._player1Properties._retry;
-								this.gameData[idGame].p2.pongData._player1Properties._retry = gameDataFront.p1.pongData._player1Properties._retry;
-							}
-							if (gameDataFront.p1.pongData._player2Properties._retry > 0) {
-								this.gameData[idGame].p1.pongData._player2Properties._retry = gameDataFront.p2.pongData._player2Properties._retry;
-								this.gameData[idGame].p2.pongData._player2Properties._retry = gameDataFront.p2.pongData._player2Properties._retry;
-							}
-
-							if (this.gameData[idGame].p1!.pongData._player1Properties._retry === 1 &&
-								this.gameData[idGame].p1!.pongData._player2Properties._retry === 1) {
-								this.gameData[idGame].p1!.pongData._player1Properties._retry === 0;
-								this.gameData[idGame].p1!.pongData._player2Properties._retry === 0;
-								this.server.emit("found", this.gameData[idGame]);
-							}
+						if (gameDataFront.pongData._player1Properties._retry > 0) {
+							this.gameData[idGame].pongData._player1Properties._retry = gameDataFront.pongData._player1Properties._retry;
 						}
-						else if (this.gameData[idGame].p2.pongData && this.gameData[idGame].p2.p2Info.id == socket.id) {
-							if (gameDataFront.p2.pongData._player1Properties._retry > 0) {
-								this.gameData[idGame].p1.pongData._player1Properties._retry = gameDataFront.p1.pongData._player1Properties._retry;
-								this.gameData[idGame].p2.pongData._player1Properties._retry = gameDataFront.p1.pongData._player1Properties._retry;
-							}
-							if (gameDataFront.p2.pongData._player2Properties._retry > 0) {
-								this.gameData[idGame].p1.pongData._player2Properties._retry = gameDataFront.p2.pongData._player2Properties._retry;
-								this.gameData[idGame].p2.pongData._player2Properties._retry = gameDataFront.p2.pongData._player2Properties._retry;
-							}
-
-							if (this.gameData[idGame].p2!.pongData._player1Properties._retry === 1 &&
-								this.gameData[idGame].p2!.pongData._player2Properties._retry === 1) {
-								this.gameData[idGame].p2!.pongData._player1Properties._retry === 0;
-								this.gameData[idGame].p2!.pongData._player2Properties._retry === 0;
-								this.server.emit("found", this.gameData[idGame]);
-							}
+						if (gameDataFront.pongData._player2Properties._retry > 0) {
+							this.gameData[idGame].pongData._player2Properties._retry = gameDataFront.pongData._player2Properties._retry;
 						}
 
+						if (this.gameData[idGame].pongData._player1Properties._retry === 1 &&
+							this.gameData[idGame].pongData._player2Properties._retry === 1) {
+							this.gameData[idGame].pongData._player1Properties._retry === 0;
+							this.gameData[idGame].pongData._player2Properties._retry === 0;
+
+							let p1Obj: {
+								p1Info: { id: string, name: string },
+								p1Side: string,
+								sequenceNumber: number,
+							} = {
+								p1Info: this.gameData[idGame].p1.p1Info,
+								p1Side: "right",
+								sequenceNumber: 0,
+							}
+							let p2Obj: {
+								p2Info: { id: string, name: string },
+								p2Side: string,
+								sequenceNumber: number,
+							} = {
+								p2Info: this.gameData[idGame].p2.p2Info,
+								p2Side: "left",
+								sequenceNumber: 0,
+							}
+
+							let PlayersObj: GameData = {
+								p1: p1Obj,
+								p2: p2Obj,
+								pongData: new PongData(
+									this.defaultWindowResolution.winWidth,
+									this.defaultWindowResolution.winHeight,
+									this.mode,
+									this.ballSpeed,
+									this.player1Speed,
+									this.player2Speed,
+									this.sizePlayer1,
+									this.sizePlayer2,
+									this.colorBackground,
+									this.colorPlayer1,
+									this.colorPlayer2,
+									this.colorBall,
+									this.colorScoreAndCenterLine,
+									this.endScore,
+									this.ballDirectionBeginning
+								)
+							}
+							this.gameData.push(PlayersObj);
+							this.gameData.splice(idGame, 1);
+							this.server.emit("found", this.gameData[idGame]);
+						}
 						// else if (this.gameData[idGame].pongData._player1Properties._retry === 2 ||
 						// 	this.gameData[idGame].pongData._player2Properties._retry === 2)
 						// 	this.server.emit("playerDisconnetionRetry", this.gameData[idGame]);
 					}
 				}
+			})
+
+			socket.on("createPrivateGame", (e: {
+				inviteCode: string,
+				name: string
+			}) => {
+				this.privatePlayersList[e.inviteCode] = [];
 			})
 
 			socket.on("foundPrivate", (e: {
@@ -176,28 +224,41 @@ export class MyGateway implements OnModuleInit {
 							p1Info: { id: string, name: string },
 							p1Side: string,
 							sequenceNumber: number,
-							pongData: undefined
 						} = {
 							p1Info: this.privatePlayersList[e.inviteCode][0],
 							p1Side: "right",
 							sequenceNumber: 0,
-							pongData: undefined
 						}
 						let p2Obj: {
 							p2Info: { id: string, name: string },
 							p2Side: string,
-							sequenceNumber: number
-							pongData: undefined
+							sequenceNumber: number,
 						} = {
 							p2Info: this.privatePlayersList[e.inviteCode][1],
 							p2Side: "left",
 							sequenceNumber: 0,
-							pongData: undefined
 						}
 
 						let PlayersObj: GameData = {
 							p1: p1Obj,
 							p2: p2Obj,
+							pongData: new PongData(
+								this.defaultWindowResolution.winWidth,
+								this.defaultWindowResolution.winHeight,
+								this.mode,
+								this.ballSpeed,
+								this.player1Speed,
+								this.player2Speed,
+								this.sizePlayer1,
+								this.sizePlayer2,
+								this.colorBackground,
+								this.colorPlayer1,
+								this.colorPlayer2,
+								this.colorBall,
+								this.colorScoreAndCenterLine,
+								this.endScore,
+								this.ballDirectionBeginning
+							)
 						}
 						this.gameData.push(PlayersObj);
 						delete this.privatePlayersList[e.inviteCode];
@@ -207,18 +268,6 @@ export class MyGateway implements OnModuleInit {
 				}
 			})
 
-			socket.on("deletePrivateGame", (inviteCode: string) => {
-				delete this.privatePlayersList[inviteCode];
-			})
-
-			socket.on("createPrivateGame", (e: {
-				inviteCode: string,
-				name: string
-			}) => {
-				this.privatePlayersList[e.inviteCode] = [];
-			})
-
-			// TODO probleme3: dessine en double le score et la balle ?
 			socket.on("watchPlayer", (playerToWatch: string) => {
 
 				if (this.namesDb.find((e: { id: string, name: string }) => e.name === playerToWatch) === undefined)
@@ -245,125 +294,62 @@ export class MyGateway implements OnModuleInit {
 
 			socket.on('updateBall', (dataObj: { gameData: GameData, sequenceNumber: number }) => {
 				if (dataObj.gameData) {
-					let FrontEndData = dataObj.gameData;
+					let gameDataFront = dataObj.gameData;
 					let sequenceNumber = dataObj.sequenceNumber;
-					const currentGameId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === FrontEndData.p1.p1Info.id && element.p2.p2Info.id === FrontEndData.p2.p2Info.id);
+					const currentGameId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === gameDataFront.p1.p1Info.id && element.p2.p2Info.id === gameDataFront.p2.p2Info.id);
 					if (currentGameId !== -1) {
-						// player 1
-						if (this.gameData[currentGameId].p1.p1Info.id == socket.id && this.gameData[currentGameId].p1.pongData) {
-							let currentPlayer = this.gameData[currentGameId].p1;
-							currentPlayer.pongData!._ballProperties._sequenceNumber = sequenceNumber;
-							currentPlayer.pongData!._ballProperties._x += currentPlayer.pongData!._ballProperties._speedX;
-							currentPlayer.pongData!._ballProperties._y += currentPlayer.pongData!._ballProperties._speedY;
+						if (this.gameData[currentGameId].pongData) {
+							let currentGame = this.gameData[currentGameId];
+							currentGame.pongData._ballProperties._sequenceNumber = sequenceNumber;
+							currentGame.pongData._ballProperties._x += currentGame.pongData._ballProperties._speedX;
+							currentGame.pongData._ballProperties._y += currentGame.pongData._ballProperties._speedY;
 
-							if (checkBallBoundsY(currentPlayer.pongData!._ballProperties._y + currentPlayer.pongData!._ballProperties._speedY, currentPlayer.pongData))
-								currentPlayer.pongData!._ballProperties._speedY *= -1;
+							if (checkBallBoundsY(currentGame.pongData._ballProperties._y + currentGame.pongData._ballProperties._speedY, currentGame.pongData))
+								currentGame.pongData._ballProperties._speedY *= -1;
 
-							if (checkBallCollision(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player1Properties, currentPlayer.pongData) && currentPlayer.pongData!._ballProperties._speedX < 0) {
-								if (currentPlayer.pongData!._ballProperties._x <= currentPlayer.pongData!._player1Properties._x + currentPlayer.pongData!._player1Properties._width) {
-									updateDirectionPlayer1(whereBallHitPlayer(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player1Properties), currentPlayer.pongData!._ballProperties, currentPlayer.pongData);
-									currentPlayer.pongData!._ballProperties._speedX *= -1;
+							if (checkBallCollision(currentGame.pongData._ballProperties, currentGame.pongData._player1Properties, currentGame.pongData) && currentGame.pongData._ballProperties._speedX < 0) {
+								if (currentGame.pongData._ballProperties._x <= currentGame.pongData._player1Properties._x + currentGame.pongData._player1Properties._width) {
+									updateDirectionPlayer1(whereBallHitPlayer(currentGame.pongData._ballProperties, currentGame.pongData._player1Properties), currentGame.pongData._ballProperties, currentGame.pongData);
+									currentGame.pongData._ballProperties._speedX *= -1;
 								}
 							}
 
-							else if (checkBallCollision(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player2Properties, currentPlayer.pongData) && currentPlayer.pongData!._ballProperties._speedX > 0) {
-								if (currentPlayer.pongData!._ballProperties._x + currentPlayer.pongData!._ballProperties._width >= currentPlayer.pongData!._player2Properties._x) {
-									updateDirectionPlayer2(whereBallHitPlayer(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player2Properties), currentPlayer.pongData!._ballProperties, currentPlayer.pongData);
-									currentPlayer.pongData!._ballProperties._speedX *= -1;
+							else if (checkBallCollision(currentGame.pongData._ballProperties, currentGame.pongData._player2Properties, currentGame.pongData) && currentGame.pongData._ballProperties._speedX > 0) {
+								if (currentGame.pongData._ballProperties._x + currentGame.pongData._ballProperties._width >= currentGame.pongData._player2Properties._x) {
+									updateDirectionPlayer2(whereBallHitPlayer(currentGame.pongData._ballProperties, currentGame.pongData._player2Properties), currentGame.pongData._ballProperties, currentGame.pongData);
+									currentGame.pongData._ballProperties._speedX *= -1;
 								}
 							}
 
-							if (currentPlayer.pongData!._ballProperties._x < 0) {
-								if (currentPlayer.pongData!._player2Properties._score < (this.endScore - 1)) {
-									currentPlayer.pongData!._player2Properties._score++;
-									resetGame(1, currentPlayer.pongData, this.ballSpeed);
+							if (currentGame.pongData._ballProperties._x < 0) {
+								currentGame.pongData._player2Properties._score++;
+								if (currentGame.pongData._player2Properties._score < currentGame.pongData._endScore) {
+									resetGame(1, currentGame.pongData);
 								}
 								else {
 									//TODO probleme2: a changer pour avertir si joueur en face est partie
-									currentPlayer.pongData!._player2Properties._score++;
-									currentPlayer.pongData!._ballProperties._x = currentPlayer.pongData!._pongCanvasWidth / 2;
-									currentPlayer.pongData!._ballProperties._y = currentPlayer.pongData!._pongCanvasHeight / 2;
-									currentPlayer.pongData!._ballProperties._speedX = 0;
-									currentPlayer.pongData!._ballProperties._speedY = 0;
-									currentPlayer.pongData!._player2Properties._endResult = "You won"
-									currentPlayer.pongData!._player1Properties._endResult = "You lost"
+									currentGame.pongData._ballProperties._x = currentGame.pongData._pongCanvasWidth / 2;
+									currentGame.pongData._ballProperties._y = currentGame.pongData._pongCanvasHeight / 2;
+									currentGame.pongData._ballProperties._speedX = 0;
+									currentGame.pongData._ballProperties._speedY = 0;
+									currentGame.pongData._player2Properties._endResult = "You won"
+									currentGame.pongData._player1Properties._endResult = "You lost"
 									this.server.emit("endGame", this.gameData[currentGameId]);
 								}
 							}
-							else if (currentPlayer.pongData!._ballProperties._x > currentPlayer.pongData!._pongCanvasWidth) {
-								if (currentPlayer.pongData!._player1Properties._score < (this.endScore - 1)) {
-									currentPlayer.pongData!._player1Properties._score++;
-									resetGame(-1, currentPlayer.pongData, this.ballSpeed);
+							else if (currentGame.pongData._ballProperties._x > currentGame.pongData._pongCanvasWidth) {
+								currentGame.pongData._player1Properties._score++;
+								if (currentGame.pongData._player1Properties._score < currentGame.pongData._endScore) {
+									resetGame(-1, currentGame.pongData);
 								}
 								else {
 									//TODO probleme2: a changer pour avertir si joueur en face est partie
-									currentPlayer.pongData!._player1Properties._score++;
-									currentPlayer.pongData!._ballProperties._x = currentPlayer.pongData!._pongCanvasWidth / 2;
-									currentPlayer.pongData!._ballProperties._y = currentPlayer.pongData!._pongCanvasHeight / 2;
-									currentPlayer.pongData!._ballProperties._speedX = 0;
-									currentPlayer.pongData!._ballProperties._speedY = 0;
-									currentPlayer.pongData!._player2Properties._endResult = "You lost"
-									currentPlayer.pongData!._player1Properties._endResult = "You won"
-									this.server.emit("endGame", this.gameData[currentGameId]);
-								}
-							}
-						}
-
-						// player 2
-						if (this.gameData[currentGameId].p2.p2Info.id == socket.id && this.gameData[currentGameId].p2.pongData) {
-							let currentPlayer = this.gameData[currentGameId].p2;
-							currentPlayer.pongData!._ballProperties._sequenceNumber = sequenceNumber;
-							currentPlayer.pongData!._ballProperties._x += currentPlayer.pongData!._ballProperties._speedX;
-							currentPlayer.pongData!._ballProperties._y += currentPlayer.pongData!._ballProperties._speedY;
-
-							if (checkBallBoundsY(currentPlayer.pongData!._ballProperties._y + currentPlayer.pongData!._ballProperties._speedY, currentPlayer.pongData))
-								currentPlayer.pongData!._ballProperties._speedY *= -1;
-
-							if (checkBallCollision(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player1Properties, currentPlayer.pongData) && currentPlayer.pongData!._ballProperties._speedX < 0) {
-								if (currentPlayer.pongData!._ballProperties._x <= currentPlayer.pongData!._player1Properties._x + currentPlayer.pongData!._player1Properties._width) {
-									updateDirectionPlayer1(whereBallHitPlayer(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player1Properties), currentPlayer.pongData!._ballProperties, currentPlayer.pongData);
-									currentPlayer.pongData!._ballProperties._speedX *= -1;
-								}
-							}
-
-							else if (checkBallCollision(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player2Properties, currentPlayer.pongData) && currentPlayer.pongData!._ballProperties._speedX > 0) {
-								if (currentPlayer.pongData!._ballProperties._x + currentPlayer.pongData!._ballProperties._width >= currentPlayer.pongData!._player2Properties._x) {
-									updateDirectionPlayer2(whereBallHitPlayer(currentPlayer.pongData!._ballProperties, currentPlayer.pongData!._player2Properties), currentPlayer.pongData!._ballProperties, currentPlayer.pongData);
-									currentPlayer.pongData!._ballProperties._speedX *= -1;
-								}
-							}
-
-							if (currentPlayer.pongData!._ballProperties._x < 0) {
-								if (currentPlayer.pongData!._player2Properties._score < (this.endScore - 1)) {
-									currentPlayer.pongData!._player2Properties._score++;
-									resetGame(1, currentPlayer.pongData, this.ballSpeed);
-								}
-								else {
-									//TODO probleme2: a changer pour avertir si joueur en face est partie
-									currentPlayer.pongData!._player2Properties._score++;
-									currentPlayer.pongData!._ballProperties._x = currentPlayer.pongData!._pongCanvasWidth / 2;
-									currentPlayer.pongData!._ballProperties._y = currentPlayer.pongData!._pongCanvasHeight / 2;
-									currentPlayer.pongData!._ballProperties._speedX = 0;
-									currentPlayer.pongData!._ballProperties._speedY = 0;
-									currentPlayer.pongData!._player2Properties._endResult = "You won"
-									currentPlayer.pongData!._player1Properties._endResult = "You lost"
-									this.server.emit("endGame", this.gameData[currentGameId]);
-								}
-							}
-							else if (currentPlayer.pongData!._ballProperties._x > currentPlayer.pongData!._pongCanvasWidth) {
-								if (currentPlayer.pongData!._player1Properties._score < (this.endScore - 1)) {
-									currentPlayer.pongData!._player1Properties._score++;
-									resetGame(-1, currentPlayer.pongData, this.ballSpeed);
-								}
-								else {
-									//TODO probleme2: a changer pour avertir si joueur en face est partie
-									currentPlayer.pongData!._player1Properties._score++;
-									currentPlayer.pongData!._ballProperties._x = currentPlayer.pongData!._pongCanvasWidth / 2;
-									currentPlayer.pongData!._ballProperties._y = currentPlayer.pongData!._pongCanvasHeight / 2;
-									currentPlayer.pongData!._ballProperties._speedX = 0;
-									currentPlayer.pongData!._ballProperties._speedY = 0;
-									currentPlayer.pongData!._player2Properties._endResult = "You lost"
-									currentPlayer.pongData!._player1Properties._endResult = "You won"
+									currentGame.pongData._ballProperties._x = currentGame.pongData._pongCanvasWidth / 2;
+									currentGame.pongData._ballProperties._y = currentGame.pongData._pongCanvasHeight / 2;
+									currentGame.pongData._ballProperties._speedX = 0;
+									currentGame.pongData._ballProperties._speedY = 0;
+									currentGame.pongData._player2Properties._endResult = "You lost"
+									currentGame.pongData._player1Properties._endResult = "You won"
 									this.server.emit("endGame", this.gameData[currentGameId]);
 								}
 							}
@@ -380,54 +366,32 @@ export class MyGateway implements OnModuleInit {
 				sequenceNumberPlayer2: number
 			}) => {
 				if (e.gameData) {
-					const currentGameId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === e.gameData.p1.p1Info.id && element.p2.p2Info.id === e.gameData.p2.p2Info.id);
+					const currentGameId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === socket.id || element.p2.p2Info.id === socket.id);
 					if (currentGameId !== -1) {
 						let side = e.side;
 						let keycode = e.keycode;
-						this.gameData[currentGameId].p1.sequenceNumber = e.sequenceNumberPlayer1
-						this.gameData[currentGameId].p2.sequenceNumber = e.sequenceNumberPlayer2
+						this.gameData[currentGameId].p1.sequenceNumber = e.sequenceNumberPlayer1;
+						this.gameData[currentGameId].p2.sequenceNumber = e.sequenceNumberPlayer2;
+						let currentPongGame = this.gameData[currentGameId].pongData;
 						switch (keycode) {
 							case "KeyW":
-								if (side === "right" && this.gameData[currentGameId].p1!.pongData!._player1Properties._y >= 0) {
-									this.gameData[currentGameId].p1!.pongData!._player1Properties._y -= this.gameData[currentGameId].p1!.pongData!._player1Properties._speedY;
-									this.gameData[currentGameId].p2!.pongData!._player1Properties._y -= this.gameData[currentGameId].p2!.pongData!._player1Properties._speedY;
+								if (side === "right" && currentPongGame._player1Properties._y >= 0) {
+									currentPongGame._player1Properties._y -= currentPongGame._player1Properties._speedY;
 								}
-								else if (side === "left" && this.gameData[currentGameId].p2!.pongData!._player2Properties._y >= 0) {
-									this.gameData[currentGameId].p2!.pongData!._player2Properties._y -= this.gameData[currentGameId].p2!.pongData!._player2Properties._speedY;
-									this.gameData[currentGameId].p1!.pongData!._player2Properties._y -= this.gameData[currentGameId].p1!.pongData!._player2Properties._speedY;
+								else if (side === "left" && currentPongGame._player2Properties._y >= 0) {
+									currentPongGame._player2Properties._y -= currentPongGame._player2Properties._speedY;
 								}
 								break;
 							case "KeyS":
-								if (side === "right" && this.gameData[currentGameId].p1!.pongData!._player1Properties._y <= (this.gameData[currentGameId].p1!.pongData!._pongCanvasHeight - this.gameData[currentGameId].p1!.pongData!._player1Properties._height)) {
-									this.gameData[currentGameId].p1!.pongData!._player1Properties._y += this.gameData[currentGameId].p1!.pongData!._player1Properties._speedY;
-									this.gameData[currentGameId].p2!.pongData!._player1Properties._y += this.gameData[currentGameId].p2!.pongData!._player1Properties._speedY;
+								if (side === "right" && currentPongGame._player1Properties._y <= (currentPongGame._pongCanvasHeight - currentPongGame._player1Properties._height)) {
+									currentPongGame._player1Properties._y += currentPongGame._player1Properties._speedY;
 								}
-								else if (side === "left" && this.gameData[currentGameId].p2!.pongData!._player2Properties._y <= (this.gameData[currentGameId].p2!.pongData!._pongCanvasHeight - this.gameData[currentGameId].p2!.pongData!._player2Properties._height)) {
-									this.gameData[currentGameId].p2!.pongData!._player2Properties._y += this.gameData[currentGameId].p2!.pongData!._player2Properties._speedY;
-									this.gameData[currentGameId].p1!.pongData!._player2Properties._y += this.gameData[currentGameId].p1!.pongData!._player2Properties._speedY;
+								else if (side === "left" && currentPongGame._player2Properties._y <= (currentPongGame._pongCanvasHeight - currentPongGame._player2Properties._height)) {
+									currentPongGame._player2Properties._y += currentPongGame._player2Properties._speedY;
 								}
 								break;
 						}
 					}
-				}
-			})
-
-			// TODO probleme2: pour notifier que l'autre joueur est parti -> a finir/refaire
-			// socket.on("quitPong", (gameDataFront: GameData) => {
-
-			// 	let gameRemoved = null
-			// 	const removePongId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === socket.id || element.p2.p2Info.id === socket.id);
-			// 	if (removePongId !== -1) {
-			// 		gameRemoved = this.gameData[removePongId];
-			// 	}
-			// 	this.server.emit("playerDisconnetion", gameRemoved);
-			// })
-
-			socket.on("cancelSearch", () => {
-
-				const removePlayerListId = this.playersList.findIndex((element: { id: string, name: string }) => element.id === socket.id);
-				if (removePlayerListId !== -1) {
-					this.playersList.splice(removePlayerListId, 1);
 				}
 			})
 
@@ -470,11 +434,11 @@ export class MyGateway implements OnModuleInit {
 			socket.on("removeGameBackend", (removeGameData: GameData) => {
 				if (removeGameData) {
 					const removePongId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === removeGameData.p1.p1Info.id && element.p2.p2Info.id === removeGameData.p2.p2Info.id);
-					if (removePongId !== -1)
+					if (removePongId !== -1) {
 						this.gameData.splice(removePongId, 1);
+					}
 				}
 			})
-
 			let timerId = setInterval(() => {
 				this.server.emit('updateGame', this.gameData);
 			}, 15);

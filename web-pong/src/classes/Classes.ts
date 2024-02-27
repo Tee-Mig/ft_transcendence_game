@@ -1,16 +1,16 @@
 export class PlayerDefaultProperties {
 	_playerWidth: number;
 	_playerHeight: number;
-	_playerVelocityY: number;
+	_playerSpeedY: number;
 
 	constructor(
 		pongCanvasWidth: number,
 		pongCanvasHeight: number,
-		playerVelocityY: number = 5,
+		playerSpeedMultiplier: number = 1
 	) {
 		this._playerWidth = pongCanvasWidth / 80;
 		this._playerHeight = pongCanvasHeight / 4;
-		this._playerVelocityY = playerVelocityY;
+		this._playerSpeedY = (pongCanvasHeight / 216) * playerSpeedMultiplier;
 	}
 }
 
@@ -21,8 +21,8 @@ export class PlayerProperties {
 	_height: number;
 	_speedY: number;
 	_score: number;
-	_endResult: string;
 	_retry: number;
+	_endResult: string | undefined;
 
 	constructor(
 		x: number,
@@ -31,11 +31,9 @@ export class PlayerProperties {
 		height: number,
 		speedY: number,
 		score: number = 0,
-		endResult: string = "none",
 		retry: number = 0
 	) {
 		this._retry = retry;
-		this._endResult = endResult;
 		this._x = x;
 		this._y = y;
 		this._width = width;
@@ -48,7 +46,7 @@ export class PlayerProperties {
 export class BallProperties {
 	_ballWidth: number;
 	_ballHeight: number;
-	_ballSpeed: number;
+	_ballSpeedMultiplier: number;
 
 	_x: number;
 	_y: number;
@@ -67,7 +65,7 @@ export class BallProperties {
 		pongCanvasWidth: number,
 		pongCanvasHeight: number,
 		playerWidth: number,
-		ballSpeed: number = 1,
+		ballSpeedMultiplier: number = 1,
 		direction: number = 1,
 		sequenceNumber: number = 0,
 		mode: string = "normal"
@@ -75,16 +73,15 @@ export class BallProperties {
 		this._ballWidth = playerWidth;
 		this._ballHeight = playerWidth;
 		this._mode = mode;
+		this._ballSpeedMultiplier = ballSpeedMultiplier;
 		if (this._mode === "rainbow")
-			this._ballSpeed = 3.5;
-		else
-			this._ballSpeed = ballSpeed;
+			this._ballSpeedMultiplier *= 3.5;
 		this._x = pongCanvasWidth / 2;
 		this._y = pongCanvasHeight / 2;
 		this._width = this._ballWidth;
 		this._height = this._ballHeight;
-		this._speedX = pongCanvasWidth / 500 * this._ballSpeed * direction; // 1.92
-		this._speedY = pongCanvasHeight / 250 * this._ballSpeed; // 2.16
+		this._speedX = pongCanvasWidth / 500 * this._ballSpeedMultiplier * direction;
+		this._speedY = pongCanvasHeight / 250 * this._ballSpeedMultiplier;
 		this._minSpeedX = this._speedX * 0.75;
 		this._minSpeedY = this._speedY * 0.75;
 		this._maxSpeedX = this._speedX * 2;
@@ -101,38 +98,70 @@ export class PongData {
 	_ballProperties: BallProperties;
 	_player1Properties: PlayerProperties;
 	_player2Properties: PlayerProperties;
-	_fontSize: number;
+	_colorBackground: string;
+	_player1Color: string;
+	_player2Color: string;
+	_ballColor: string;
+	_ballSpeed: number;
+	_scoreAndCenterLineColor: string;
 	_mode: string;
+	_endScore: number;
+	_defaultBallDirection: number;
+	_fontSize: number;
 
 	constructor(
-		pongCanvasWidth: number = 0,
-		pongCanvasHeight: number = 0,
+		pongCanvasWidth: number = 1920,
+		pongCanvasHeight: number = 1080,
 		mode: string = "normal",
-		ballSpeed: number = 1
+		ballSpeedMultiplier: number = 1,
+		player1SpeedMultiplier: number = 1,
+		player2SpeedMultiplier: number = 1,
+		player1SizeMultiplier: number = 1,
+		player2SizeMultiplier: number = 1,
+		colorBackground: string = "#252930",
+		player1Color: string = "FF14FB",
+		player2Color: string = "FF14FB",
+		ballColor: string = "FF14FB",
+		scoreAndCenterLineColor: string = "FF14FB",
+		endScore: number = 11,
+		defaultBallDirection: number = 1
 	) {
-		this._mode = mode;
+		this._ballSpeed = ballSpeedMultiplier;
 		this._pongCanvasWidth = pongCanvasWidth;
 		this._pongCanvasHeight = pongCanvasHeight;
-		this._fontSize = pongCanvasWidth / 20;
-		this._playerDefaultProperties = new PlayerDefaultProperties(pongCanvasWidth, pongCanvasHeight);
+		this._mode = mode;
+		this._playerDefaultProperties = new PlayerDefaultProperties(pongCanvasWidth, pongCanvasHeight, 1);
 		this._ballProperties = new BallProperties(pongCanvasWidth, pongCanvasHeight,
-			this._playerDefaultProperties._playerWidth, ballSpeed, undefined, undefined, this._mode);
+			this._playerDefaultProperties._playerWidth, ballSpeedMultiplier, defaultBallDirection, 0, this._mode);
 
 		// init player1
 		this._player1Properties = new PlayerProperties(
 			this._pongCanvasWidth / 150,
 			(this._pongCanvasHeight / 2) - (this._playerDefaultProperties._playerHeight / 2),
 			this._playerDefaultProperties._playerWidth,
-			this._playerDefaultProperties._playerHeight,
-			this._playerDefaultProperties._playerVelocityY
+			(this._playerDefaultProperties._playerHeight) * ((player1SizeMultiplier / 10) + 1),
+			this._playerDefaultProperties._playerSpeedY * player1SpeedMultiplier
 		);
 		// init player2
 		this._player2Properties = new PlayerProperties(
-			this._pongCanvasWidth - (this, this._pongCanvasWidth / 150) - this._playerDefaultProperties._playerWidth,
+			this._pongCanvasWidth - (this._pongCanvasWidth / 150) - this._playerDefaultProperties._playerWidth,
 			(this._pongCanvasHeight / 2) - (this._playerDefaultProperties._playerHeight / 2),
 			this._playerDefaultProperties._playerWidth,
-			this._playerDefaultProperties._playerHeight,
-			this._playerDefaultProperties._playerVelocityY
+			(this._playerDefaultProperties._playerHeight) * ((player2SizeMultiplier / 10) + 1),
+			this._playerDefaultProperties._playerSpeedY * player2SpeedMultiplier
 		);
+		this._colorBackground = colorBackground;
+		this._player2Color = player2Color;
+		this._player1Color = player1Color;
+		this._ballColor = ballColor;
+		this._scoreAndCenterLineColor = scoreAndCenterLineColor;
+		this._mode = mode;
+		this._endScore = endScore;
+		this._defaultBallDirection = defaultBallDirection;
+		this._fontSize = pongCanvasWidth / 20;
+	}
+
+	scale() {
+		console.log("Je suis dans test de pongData");
 	}
 }

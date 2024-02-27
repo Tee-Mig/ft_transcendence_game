@@ -4,9 +4,9 @@ export function checkBallBoundsY(nextPositionBallY: number, pongData: PongData |
 	return (nextPositionBallY < 0 || nextPositionBallY > pongData!._pongCanvasHeight);
 }
 
-export function resetGame(direction: number, pongData: PongData | undefined, ballSPeed: number) {
+export function resetGame(direction: number, pongData: PongData | undefined) {
 	pongData!._ballProperties = new BallProperties(pongData!._pongCanvasWidth, pongData!._pongCanvasHeight,
-		pongData!._playerDefaultProperties._playerWidth, ballSPeed, direction, undefined, pongData!._mode);
+		pongData!._playerDefaultProperties._playerWidth, pongData._ballSpeed, direction, undefined, pongData!._mode);
 }
 
 export function checkPlayerBounds(nextPositionPlayerY: number, pongData: PongData): boolean {

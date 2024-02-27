@@ -115,11 +115,11 @@
 
 }
 
-/* #pongCanvas {
-	text-align: ;
-	width: 100%;
-	height: 100%;
-} */
+#pongCanvas {
+	width: 90%;
+	margin: auto;
+	margin-bottom: 5%;
+}
 
 #yesButton, #noButton {
 	margin: 0.4rem;
