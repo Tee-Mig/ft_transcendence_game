@@ -21,18 +21,18 @@ export class MyGateway implements OnModuleInit {
 		winWidth: 1920,
 		winHeight: 1080
 	}
-	mode: string = "normal"; // *mode de jeu(normal or rainbow)
-	ballSpeed: number = 1; // *vitesse de la balle
-	player1Speed: number = 1; // *vitesse joueur 1
-	player2Speed: number = 1; // *vitesse joueur 2
-	sizePlayer1: number = 1;
-	sizePlayer2: number = 1;
-	colorBackground: string = "#252930";
-	colorPlayer1: string = "#FF14FB";
-	colorPlayer2: string = "#FF14FB";
-	colorBall: string = "#FF14FB";
-	colorScoreAndCenterLine: string = "#FF14FB";
-	endScore: number = 11; // *score avant la fin d'une partie
+	mode: string = "normal"; // *mode de jeu(normal, mode1 ou mode2)
+	ballSpeed: number = 1; // *vitesse de la balle (x10% en augmentant de 1)
+	player1Speed: number = 1; // *vitesse joueur 1 (x10% en augmentant de 1)
+	player2Speed: number = 1; // *vitesse joueur 2 (x10% en augmentant de 1)
+	sizePlayer1: number = 1; // *largeur du joueur (x10% en augmentant de 1)
+	sizePlayer2: number = 1; // *largeur du joueur (x10% en augmentant de 1)
+	colorBackground: string = "#252930"; // *couleur background
+	colorPlayer1: string = "#FF14FB"; // *couleur joueur 1
+	colorPlayer2: string = "#FF14FB"; // *couleur joueur 2
+	colorBall: string = "#FF14FB"; // *couleur de la ball
+	colorScoreAndCenterLine: string = "#FF14FB"; // *couleur du score et de la ligne du milieu
+	endScore: number = 1; // *score avant la fin d'une partie
 	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
 	gameData: GameData[] = []; // *store all games of Pong
@@ -209,6 +209,7 @@ export class MyGateway implements OnModuleInit {
 					socket.emit("gameNotFound");
 				}
 				else {
+					console.log("test 2");
 					let infoPlayer:
 						{
 							id: string,
@@ -265,6 +266,7 @@ export class MyGateway implements OnModuleInit {
 
 						this.server.emit("found", PlayersObj);
 					}
+					// socket.emit("putLoadingPage");
 				}
 			})
 
@@ -275,17 +277,19 @@ export class MyGateway implements OnModuleInit {
 				else {
 					const gameId = this.gameData.findIndex((e: GameData) => e.p1.p1Info.name === playerToWatch || e.p2.p2Info.name === playerToWatch)
 					if (gameId !== -1) {
-						let findGameId: string;
-						if (this.gameData[gameId].p1.p1Info.name === playerToWatch)
-							findGameId = this.gameData[gameId].p1.p1Info.id;
-						else if (this.gameData[gameId].p2.p2Info.name === playerToWatch)
-							findGameId = this.gameData[gameId].p2.p2Info.id;
+						// let findGameId: string;
+						// if (this.gameData[gameId].p1.p1Info.name === playerToWatch)
+						// 	findGameId = this.gameData[gameId].p1.p1Info.id;
+						// else if (this.gameData[gameId].p2.p2Info.name === playerToWatch)
+						// 	findGameId = this.gameData[gameId].p2.p2Info.id;
 
-						let infoPonData: { gameData: GameData, playerId: string } = {
-							gameData: this.gameData[gameId],
-							playerId: findGameId
-						}
-						socket.emit('watchGame', infoPonData);
+						// let infoPongData: { gameData: GameData, playerId: string } = {
+						// 	gameData: this.gameData[gameId],
+						// 	playerId: findGameId
+						// }
+						// console.log("infoPongData === ");
+						// console.log(infoPongData);
+						socket.emit('watchGame', this.gameData[gameId]);
 					}
 					else
 						socket.emit("noGameToWatch");
@@ -323,7 +327,11 @@ export class MyGateway implements OnModuleInit {
 
 							if (currentGame.pongData._ballProperties._x < 0) {
 								currentGame.pongData._player2Properties._score++;
-								if (currentGame.pongData._player2Properties._score < currentGame.pongData._endScore) {
+								if (currentGame.pongData._player2Properties._score < this.endScore) {
+									if (currentGame.pongData._mode === "mode1") {
+										currentGame.pongData._player1Properties._height *= 1.1;
+										currentGame.pongData._player2Properties._height *= 0.9;
+									}
 									resetGame(1, currentGame.pongData);
 								}
 								else {
@@ -332,14 +340,18 @@ export class MyGateway implements OnModuleInit {
 									currentGame.pongData._ballProperties._y = currentGame.pongData._pongCanvasHeight / 2;
 									currentGame.pongData._ballProperties._speedX = 0;
 									currentGame.pongData._ballProperties._speedY = 0;
-									currentGame.pongData._player2Properties._endResult = "You won"
-									currentGame.pongData._player1Properties._endResult = "You lost"
+									currentGame.pongData._player2Properties._endResult = "You won";
+									currentGame.pongData._player1Properties._endResult = "You lost";
 									this.server.emit("endGame", this.gameData[currentGameId]);
 								}
 							}
 							else if (currentGame.pongData._ballProperties._x > currentGame.pongData._pongCanvasWidth) {
 								currentGame.pongData._player1Properties._score++;
-								if (currentGame.pongData._player1Properties._score < currentGame.pongData._endScore) {
+								if (currentGame.pongData._player1Properties._score < this.endScore) {
+									if (currentGame.pongData._mode === "mode1") {
+										currentGame.pongData._player2Properties._height *= 1.1;
+										currentGame.pongData._player1Properties._height *= 0.9;
+									}
 									resetGame(-1, currentGame.pongData);
 								}
 								else {
@@ -348,8 +360,8 @@ export class MyGateway implements OnModuleInit {
 									currentGame.pongData._ballProperties._y = currentGame.pongData._pongCanvasHeight / 2;
 									currentGame.pongData._ballProperties._speedX = 0;
 									currentGame.pongData._ballProperties._speedY = 0;
-									currentGame.pongData._player2Properties._endResult = "You lost"
-									currentGame.pongData._player1Properties._endResult = "You won"
+									currentGame.pongData._player2Properties._endResult = "You lost";
+									currentGame.pongData._player1Properties._endResult = "You won";
 									this.server.emit("endGame", this.gameData[currentGameId]);
 								}
 							}
@@ -365,7 +377,7 @@ export class MyGateway implements OnModuleInit {
 				sequenceNumberPlayer1: number,
 				sequenceNumberPlayer2: number
 			}) => {
-				if (e.gameData) {
+				if (e.keycode !== "null" && e.gameData) {
 					const currentGameId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === socket.id || element.p2.p2Info.id === socket.id);
 					if (currentGameId !== -1) {
 						let side = e.side;
@@ -395,20 +407,39 @@ export class MyGateway implements OnModuleInit {
 				}
 			})
 
+			socket.on("cancelSearch", () => {
+
+				const removePlayerListId = this.playersList.findIndex((element: { id: string, name: string }) => element.id === socket.id);
+				if (removePlayerListId !== -1) {
+					this.playersList.splice(removePlayerListId, 1);
+				}
+			})
+
+			socket.on("removeGameBackend", (removeGameData: GameData) => {
+				if (removeGameData) {
+					const removePongId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === removeGameData.p1.p1Info.id && element.p2.p2Info.id === removeGameData.p2.p2Info.id);
+					if (removePongId !== -1) {
+						this.gameData.splice(removePongId, 1);
+					}
+				}
+			})
+
+			socket.on("quitPlayer", (playerId: string) => {
+				const removePongId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === socket.id || element.p2.p2Info.id === socket.id);
+				if (removePongId !== -1) {
+					this.gameData.splice(removePongId, 1);
+				}
+				this.server.emit("disconnectPlayer", playerId);
+			})
+
 			socket.on("disconnect", (reason: string) => {
 
 				// * tests pour voir si je supprime bien tout lors de la deconnexion d'un client
-				// console.log("test room pong 0 = " + this.gameData[0]);
-				// console.log("test room pong 1 = " + this.gameData[1]);
-				// console.log("test room pong 2 = " + this.gameData[2]);
+				console.log(`number of active game = ${this.gameData.length}`)
+				console.log(`number of player in queue = ${this.playersList.length}`)
+				console.log(`number of player in private queue = ${this.privatePlayersList.length}`)
+				console.log(`number of client with name = ${this.namesDb.length}`)
 
-				// console.log("test list pong = " + this.playersList[0]);
-				// console.log("test list pong = " + this.playersList[1]);
-				// console.log("test list pong = " + this.playersList[2]);
-
-				// console.log("test names db = " + this.namesDb[0]);
-				// console.log("test names db = " + this.namesDb[1]);
-				// console.log("test names db = " + this.namesDb[2]);
 				// *enleve la partie de pong
 				let gameRemoved = null
 				const removePongId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === socket.id || element.p2.p2Info.id === socket.id);
@@ -431,14 +462,6 @@ export class MyGateway implements OnModuleInit {
 				this.server.emit("playerDisconnetion", gameRemoved);
 			})
 
-			socket.on("removeGameBackend", (removeGameData: GameData) => {
-				if (removeGameData) {
-					const removePongId = this.gameData.findIndex((element: GameData) => element.p1.p1Info.id === removeGameData.p1.p1Info.id && element.p2.p2Info.id === removeGameData.p2.p2Info.id);
-					if (removePongId !== -1) {
-						this.gameData.splice(removePongId, 1);
-					}
-				}
-			})
 			let timerId = setInterval(() => {
 				this.server.emit('updateGame', this.gameData);
 			}, 15);

@@ -74,7 +74,7 @@ export class BallProperties {
 		this._ballHeight = playerWidth;
 		this._mode = mode;
 		this._ballSpeedMultiplier = ballSpeedMultiplier;
-		if (this._mode === "rainbow")
+		if (this._mode === "mode2")
 			this._ballSpeedMultiplier *= 3.5;
 		this._x = pongCanvasWidth / 2;
 		this._y = pongCanvasHeight / 2;

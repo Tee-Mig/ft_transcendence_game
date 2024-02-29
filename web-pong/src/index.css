@@ -86,12 +86,15 @@
 	margin-top: 1.5rem;
 }
 
-/* #dancingCat {
-	position: absolute;
-	z-index: 2;
-	width: 30%;
-	height: 35%;
-} */
+.jamCatDiv {
+	position: relative;
+	/* z-index: 5; */
+	width: 20%;
+	margin: auto;
+	opacity: 0.3;
+	/* width: 30%;
+	height: 35%; */
+}
 
 #copyButton {
 	padding-left: 1%;
@@ -108,10 +111,13 @@
 	border: 2px solid rgb(119, 61, 150);
 	border-radius: 15px;
 
-	margin-left: 5rem;
-	margin-right: 5rem;
-	margin-top: -26rem;
 	padding-top: 1rem;
+	padding-bottom: 1rem;
+	/* margin-left: 5rem; */
+	/* margin-right: 5rem; */
+	width: 70%;
+	margin: auto;
+	margin-top: -26rem;
 
 }
 
@@ -130,5 +136,5 @@
 }
 
 #buttonQuit {
-	margin-top: 1rem;
+	margin: 1rem;
 }
