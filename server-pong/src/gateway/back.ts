@@ -21,7 +21,7 @@ export class MyGateway implements OnModuleInit {
 		winWidth: 1920,
 		winHeight: 1080
 	}
-	mode: string = "normal"; // *mode de jeu(normal, mode1 ou mode2)
+	mode: string = "mode2"; // *mode de jeu(normal, mode1 ou mode2)
 	ballSpeed: number = 1; // *vitesse de la balle (x10% en augmentant de 1)
 	player1Speed: number = 1; // *vitesse joueur 1 (x10% en augmentant de 1)
 	player2Speed: number = 1; // *vitesse joueur 2 (x10% en augmentant de 1)
