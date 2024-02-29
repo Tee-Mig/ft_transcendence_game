@@ -1,14 +1,9 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { WebsocketContext } from "../context/WebsocketContext";
 import { GameData } from "../../../server-pong/dist/types/types";
-import { PlayerProperties, PongData } from "../../../server-pong/dist/classes/Classes";
 import Button from "./Button";
-import { checkBallBoundsY, checkBallCollision, resetGame, updateDirectionPlayer1, updateDirectionPlayer2, whereBallHitPlayer } from "../pongFunctions/pongFunctions";
-import { Socket } from "socket.io-client";
+import { checkBallBoundsY, checkBallCollision, resetGame } from "../pongFunctions/pongFunctions";
 import Input from "./Input";
-import Backdrop from "./Backdrop";
-import { Interval } from "@nestjs/schedule";
-import { BallProperties } from "../classes/Classes";
 
 export const Websocket = () => {
 
@@ -64,6 +59,7 @@ export const Websocket = () => {
 	const limitTimeBetweenCode: number = 3 * 60000; // 3 minutes
 	let [playerToWatch, setPlayerToWatch] = useState<string | undefined>();
 	let playerId: string | null = null;
+	let [playerIdRender, setPlayerIdRender] = useState<string | null>(null);
 
 	// *variables background pour le mode 2
 	let colorBack1: number = 0;
@@ -83,9 +79,6 @@ export const Websocket = () => {
 			winHeight: window.innerHeight
 		})
 	}
-	// useEffect gameDataRender = value
-	// useEffect gameDataRender = null
-	// useEffect gameDataRender = null
 
 	useEffect(() => {
 		socket.on('found', (gameDataBack: GameData) => {
@@ -111,39 +104,31 @@ export const Websocket = () => {
 				setPong(true);
 				setLoadingPage(false);
 				setResultOk(false);
-				setLoadingPage(false);
 			}
 		})
 
-		socket.on('watchGame', (gameDataBack: GameData) => {
+		// todo regler ici !!!!!!!!!!!!!!!!!!!
+		socket.on('watchGame', (playerIdBack: string) => {
 
-			if (gameDataBack!.p1!.p1Info.name === playerToWatch)
-				playerId = gameDataBack!.p1!.p1Info.id;
-			else if (gameDataBack!.p2!.p2Info.name === playerToWatch)
-				playerId = gameDataBack!.p2!.p2Info.id;
+			playerId = playerIdBack;
+			setPlayerIdRender(playerId);
 
 			setResolutionCoef({
-				width: windowResolution.winWidth / gameDataBack!.pongData._pongCanvasWidth,
-				height: windowResolution.winHeight / gameDataBack!.pongData._pongCanvasHeight
+				width: windowResolution.winWidth / 1920,
+				height: windowResolution.winHeight / 1080
 			});
 
-			gameDataFront = gameDataBack;
-
-			setGameDataRender(gameDataBack);
 			setPong(true);
-			setLoadingPage(false);
 			setResultOk(false);
 			setLoadingPage(false);
+			setSearchInput(false);
 		})
 
 		socket.on("updateGame", (backendPlayers: GameData[]) => {
-			// console.log("playerId === ");
-			// console.log(playerId);
 			let myGameid
 			if (playerId === null)
 				myGameid = backendPlayers.findIndex((element: GameData) => element.p1!.p1Info.id === socket.id || element.p2!.p2Info.id === socket.id);
 			else {
-				// console.log("mon playerId n'est pas null");
 				myGameid = backendPlayers.findIndex((element: GameData) => element.p1!.p1Info.id === playerId || element.p2!.p2Info.id === playerId);
 			}
 			if (myGameid !== -1) {
@@ -307,9 +292,11 @@ export const Websocket = () => {
 		now = Date.now();
 		playerId = null;
 
-		if (gameDataRender) {
-			(gameDataRender!.p1!.p1Info.id === socket.id) ?
-				(socket.emit("quitPlayer", gameDataRender!.p2!.p2Info.id)) : (socket.emit("quitPlayer", gameDataRender!.p1!.p1Info.id));
+		if (playerIdRender === null) {
+			if (gameDataRender) {
+				(gameDataRender!.p1!.p1Info.id === socket.id) ?
+					(socket.emit("quitPlayer", gameDataRender!.p2!.p2Info.id)) : (socket.emit("quitPlayer", gameDataRender!.p1!.p1Info.id));
+			}
 		}
 
 		gameDataFront = null;
@@ -368,7 +355,6 @@ export const Websocket = () => {
 
 	function generateGameId() {
 		if (Date.now() > now + limitTimeBetweenCode || now === 0) {
-			console.log("generate code"); //
 			if (gameId !== "Generate a game id")
 				socket.emit("deletePrivateGame", { inviteCode });
 			setNow(Date.now());
@@ -393,7 +379,7 @@ export const Websocket = () => {
 
 	const moveBall = () => {
 		if (contextJs && gameDataFront) {
-			if (gameDataFront.p1!.p1Info.id == socket.id || gameDataFront.p2!.p2Info.id == socket.id) {
+			if (gameDataFront.p1!.p1Info.id == socket.id || gameDataFront.p2!.p2Info.id == socket.id || playerId !== null) {
 				let currentPongData = gameDataFront.pongData;
 
 				sequenceNumberBall++;
@@ -460,7 +446,6 @@ export const Websocket = () => {
 		window.addEventListener('resize', detectSize);
 
 		if (gameDataRender) {
-			console.log("GameData pas null");
 			setResolutionCoef({
 				...resolutionCoef,
 				width: windowResolution.winWidth / gameDataRender!.pongData._pongCanvasWidth,
@@ -607,7 +592,7 @@ export const Websocket = () => {
 
 	const draw = () => {
 		if (context && gameDataRender && gameDataRender.pongData) {
-			if (gameDataRender.p1!.p1Info.id == socket.id || gameDataRender.p2!.p2Info.id == socket.id) {
+			if (gameDataRender.p1!.p1Info.id == socket.id || gameDataRender.p2!.p2Info.id == socket.id || playerIdRender !== null) {
 				let currentPongData = gameDataRender.pongData;
 				context.clearRect(0, 0, currentPongData._pongCanvasWidth * resolutionCoef!.width, currentPongData._pongCanvasHeight * resolutionCoef!.height);
 
@@ -776,7 +761,7 @@ export const Websocket = () => {
 									placeholder="Player's name"
 									type="text"
 									value=""
-									updateString={(e: any) => (playerToWatch = e.target.value)}
+									updateString={(e: any) => (setPlayerToWatch(e.target.value))}
 								/>
 								<br />
 								<Button
