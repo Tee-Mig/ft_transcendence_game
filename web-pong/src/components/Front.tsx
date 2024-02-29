@@ -50,6 +50,7 @@ export const Websocket = () => {
 	const [playerLeft, setPlayerLeft] = useState<boolean>(false);
 	const [resultOk, setResultOk] = useState<boolean>(false);
 	const [rainbowMode, setRainbowMode] = useState<boolean>(false);
+	const [endBattleWatch, setEndBattleWatch] = useState<boolean>(false);
 
 	// *autres variables
 	const [playerCode, setPlayerCode] = useState<string | null>(null);
@@ -220,22 +221,35 @@ export const Websocket = () => {
 
 		socket.on("playerDisconnetion", (gameDataBack: GameData) => {
 			if (gameDataBack !== null) {
-				if ((gameDataBack!.p1!.p1Info.id === socket.id || gameDataBack!.p2!.p2Info.id === socket.id)) {
+				if ((gameDataBack!.p1!.p1Info.id === socket.id || gameDataBack!.p2!.p2Info.id === socket.id || playerId !== null)) {
 					setPong(false);
 					setSearchInput(true);
-					setPlayerLeft(true);
 					setResultOk(true);
 					setLoadingPage(false);
+					if (playerId !== null) {
+						setEndBattleWatch(true)
+						playerId = null;
+						setPlayerIdRender(playerId);
+					}
+					else
+						setPlayerLeft(true);
 				}
 			}
 			socket.emit("removeGameBackend", gameDataBack);
 		})
 
-		socket.on("disconnectPlayer", (playerId: string) => {
-			if (playerId == socket.id) {
+		socket.on("disconnectPlayer", (playerIdBack: string) => {
+
+			if (playerIdBack == socket.id || playerId !== null) {
 				setPong(false);
 				setSearchInput(true);
-				setPlayerLeft(true);
+				if (playerId !== null) {
+					setEndBattleWatch(true)
+					playerId = null;
+					setPlayerIdRender(playerId);
+				}
+				else
+					setPlayerLeft(true);
 				setResultOk(true);
 				setLoadingPage(false);
 				gameDataFront = null;
@@ -845,6 +859,15 @@ export const Websocket = () => {
 					<div id="messageOnCenter">
 						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">Your opponent left</h1>
 						<Button id="okOpponentLeft" className="button" text="ok" click={() => (setPlayerLeft(false), setResultOk(true))} />
+					</div>
+				}
+
+				{
+					// todo mettre a jour css
+					endBattleWatch &&
+					<div id="messageOnCenter">
+						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">The game is finished</h1>
+						<Button id="endBattleWatch" className="button" text="ok" click={() => (setEndBattleWatch(false))} />
 					</div>
 				}
 
