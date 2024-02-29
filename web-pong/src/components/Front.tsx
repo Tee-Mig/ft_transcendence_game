@@ -56,7 +56,7 @@ export const Websocket = () => {
 	const [gameId, setGameId] = useState<string>("Generate a game id");
 	let [now, setNow] = useState<number>(0);
 	let inviteCode: string = "null";
-	const limitTimeBetweenCode: number = 3 * 60000; // 3 minutes
+	const limitTimeBetweenCode: number = 2 * 60000; // 2 minutes
 	let [playerToWatch, setPlayerToWatch] = useState<string | undefined>();
 	let playerId: string | null = null;
 	let [playerIdRender, setPlayerIdRender] = useState<string | null>(null);
@@ -288,10 +288,6 @@ export const Websocket = () => {
 		setSearchInput(true);
 		setPongResult(null);
 
-		setGameId("Generate a game id");
-		now = 0;
-		playerId = null;
-
 		if (playerIdRender === null) {
 			if (gameDataRender) {
 				(gameDataRender!.p1!.p1Info.id === socket.id) ?
@@ -307,8 +303,10 @@ export const Websocket = () => {
 		setSearchInput(true);
 		setLoadingPage(false);
 		if (playerCode !== null) {
+			setGameId("Generate a game id");
 			socket.emit("deletePrivateGame", playerCode);
 			setPlayerCode(null);
+			setNow(0);
 		}
 		socket.emit('cancelSearch');
 	}
