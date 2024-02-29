@@ -32,7 +32,7 @@ export class MyGateway implements OnModuleInit {
 	colorPlayer2: string = "#FF14FB"; // *couleur joueur 2
 	colorBall: string = "#FF14FB"; // *couleur de la ball
 	colorScoreAndCenterLine: string = "#FF14FB"; // *couleur du score et de la ligne du milieu
-	endScore: number = 11; // *score avant la fin d'une partie
+	endScore: number = 1; // *score avant la fin d'une partie
 	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
 	gameData: GameData[] = []; // *store all games of Pong
@@ -114,6 +114,11 @@ export class MyGateway implements OnModuleInit {
 
 					this.server.emit("found", PlayersObj);
 				}
+			})
+
+			socket.on("deletePrivateGame", (inviteCode: string) => {
+				if (this.privatePlayersList[inviteCode] !== undefined)
+					delete this.privatePlayersList[inviteCode];
 			})
 
 			socket.on('updateGame', (gameDataFront: GameData) => {

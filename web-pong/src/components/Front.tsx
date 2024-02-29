@@ -289,7 +289,7 @@ export const Websocket = () => {
 		setPongResult(null);
 
 		setGameId("Generate a game id");
-		now = Date.now();
+		now = 0;
 		playerId = null;
 
 		if (playerIdRender === null) {
@@ -306,6 +306,10 @@ export const Websocket = () => {
 	function cancelSearch() {
 		setSearchInput(true);
 		setLoadingPage(false);
+		if (playerCode !== null) {
+			socket.emit("deletePrivateGame", playerCode);
+			setPlayerCode(null);
+		}
 		socket.emit('cancelSearch');
 	}
 
@@ -354,6 +358,8 @@ export const Websocket = () => {
 	}
 
 	function generateGameId() {
+		console.log("now === ");
+		console.log(now);
 		if (Date.now() > now + limitTimeBetweenCode || now === 0) {
 			if (gameId !== "Generate a game id")
 				socket.emit("deletePrivateGame", { inviteCode });
