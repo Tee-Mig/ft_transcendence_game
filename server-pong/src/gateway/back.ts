@@ -320,7 +320,7 @@ export class MyGateway implements OnModuleInit {
 
 							if (currentGame.pongData._ballProperties._x < 0) {
 								currentGame.pongData._player2Properties._score++;
-								if (currentGame.pongData._player2Properties._score <= this.endScore) {
+								if (currentGame.pongData._player2Properties._score < this.endScore) {
 									if (currentGame.pongData._mode === "mode1") {
 										currentGame.pongData._player1Properties._height *= 1.1;
 										currentGame.pongData._player2Properties._height *= 0.9;
@@ -340,7 +340,7 @@ export class MyGateway implements OnModuleInit {
 							}
 							else if (currentGame.pongData._ballProperties._x > currentGame.pongData._pongCanvasWidth) {
 								currentGame.pongData._player1Properties._score++;
-								if (currentGame.pongData._player1Properties._score <= this.endScore) {
+								if (currentGame.pongData._player1Properties._score < this.endScore) {
 									if (currentGame.pongData._mode === "mode1") {
 										currentGame.pongData._player2Properties._height *= 1.1;
 										currentGame.pongData._player1Properties._height *= 0.9;
