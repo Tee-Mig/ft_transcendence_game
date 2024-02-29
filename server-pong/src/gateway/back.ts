@@ -22,7 +22,7 @@ export class MyGateway implements OnModuleInit {
 		winHeight: 1080
 	}
 	mode: string = "normal"; // *mode de jeu(normal, mode1 ou mode2)
-	ballSpeed: number = 1; // *vitesse de la balle (x10% en augmentant de 1)
+	ballSpeed: number = 2; // *vitesse de la balle (x10% en augmentant de 1)
 	player1Speed: number = 1; // *vitesse joueur 1 (x10% en augmentant de 1)
 	player2Speed: number = 1; // *vitesse joueur 2 (x10% en augmentant de 1)
 	sizePlayer1: number = 1; // *largeur du joueur (x10% en augmentant de 1)
@@ -32,7 +32,7 @@ export class MyGateway implements OnModuleInit {
 	colorPlayer2: string = "#FF14FB"; // *couleur joueur 2
 	colorBall: string = "#FF14FB"; // *couleur de la ball
 	colorScoreAndCenterLine: string = "#FF14FB"; // *couleur du score et de la ligne du milieu
-	endScore: number = 11; // *score avant la fin d'une partie
+	endScore: number = 1; // *score avant la fin d'une partie
 	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
 	gameData: GameData[] = []; // *store all games of Pong
@@ -320,7 +320,7 @@ export class MyGateway implements OnModuleInit {
 
 							if (currentGame.pongData._ballProperties._x < 0) {
 								currentGame.pongData._player2Properties._score++;
-								if (currentGame.pongData._player2Properties._score < this.endScore) {
+								if (currentGame.pongData._player2Properties._score <= this.endScore) {
 									if (currentGame.pongData._mode === "mode1") {
 										currentGame.pongData._player1Properties._height *= 1.1;
 										currentGame.pongData._player2Properties._height *= 0.9;
@@ -340,7 +340,7 @@ export class MyGateway implements OnModuleInit {
 							}
 							else if (currentGame.pongData._ballProperties._x > currentGame.pongData._pongCanvasWidth) {
 								currentGame.pongData._player1Properties._score++;
-								if (currentGame.pongData._player1Properties._score < this.endScore) {
+								if (currentGame.pongData._player1Properties._score <= this.endScore) {
 									if (currentGame.pongData._mode === "mode1") {
 										currentGame.pongData._player2Properties._height *= 1.1;
 										currentGame.pongData._player1Properties._height *= 0.9;
