@@ -63,6 +63,7 @@ export const Websocket = () => {
 	const limitTimeBetweenCode: number = 2 * 60000; // 2 minutes
 	let [playerToWatch, setPlayerToWatch] = useState<string | undefined>();
 	let playerId: string | null = null;
+	let [playerSide, setPlayerSide] = useState<string | null>(null);
 	let [playerIdRender, setPlayerIdRender] = useState<string | null>(null);
 
 	// *variables background pour le mode 2
@@ -114,9 +115,14 @@ export const Websocket = () => {
 		})
 
 		// todo regler ici !!!!!!!!!!!!!!!!!!!
-		socket.on('watchGame', (playerIdBack: string) => {
+		socket.on('watchGame', (info: { playerIdBack: string, playerSideBack: string }) => {
 
-			playerId = playerIdBack;
+			console.log("playerIdBack = ");
+			console.log(info.playerIdBack);
+			console.log("playerSideBack = ");
+			console.log(info.playerSideBack);
+			playerId = info.playerIdBack;
+			setPlayerSide(info.playerSideBack);
 			setPlayerIdRender(playerId);
 
 			setResolutionCoef({
@@ -130,7 +136,6 @@ export const Websocket = () => {
 			setSearchInput(false);
 		})
 
-		// todo a remettre
 		socket.on("updateGame", (backendPlayers: GameData[]) => {
 			let myGameid
 			if (playerId === null)
@@ -616,6 +621,10 @@ export const Websocket = () => {
 				let currentPongData = gameDataRender.pongData;
 				context.clearRect(0, 0, currentPongData._pongCanvasWidth * resolutionCoef!.width, currentPongData._pongCanvasHeight * resolutionCoef!.height);
 
+				if (sideRender === null) {
+					console.log("player side ===")
+					console.log(playerSide);
+				}
 				// color background
 				if (currentPongData._mode !== "mode2") {
 					context.fillStyle = currentPongData._colorBackground;
@@ -628,7 +637,7 @@ export const Websocket = () => {
 
 
 				// draw player1
-				let flipDisplayPlayer2 = (sideRender === "right") ? 0 : ((gameDataRender.pongData._pongCanvasWidth - (gameDataRender.pongData._pongCanvasWidth / 39)) * resolutionCoef!.width);
+				let flipDisplayPlayer2 = (sideRender === "right" || playerSide === "right") ? 0 : ((gameDataRender.pongData._pongCanvasWidth - (gameDataRender.pongData._pongCanvasWidth / 39)) * resolutionCoef!.width);
 				context.fillStyle = currentPongData._player1Color;
 				context.fillRect(
 					(currentPongData._player1Properties._x * resolutionCoef!.width) + flipDisplayPlayer2,
@@ -645,7 +654,7 @@ export const Websocket = () => {
 					currentPongData._player2Properties._height * resolutionCoef!.height
 				);
 
-				let flipDisplayBall = (sideRender === "right") ? 0 : ((currentPongData._ballProperties._x * resolutionCoef!.width) - ((gameDataRender.pongData._pongCanvasWidth / 2) * resolutionCoef!.width) + ((currentPongData._ballProperties._width / 2) * resolutionCoef!.width));
+				let flipDisplayBall = (sideRender === "right" || playerSide === "right") ? 0 : ((currentPongData._ballProperties._x * resolutionCoef!.width) - ((gameDataRender.pongData._pongCanvasWidth / 2) * resolutionCoef!.width) + ((currentPongData._ballProperties._width / 2) * resolutionCoef!.width));
 
 				// draw ball
 				context.fillStyle = currentPongData._ballColor;
@@ -656,7 +665,7 @@ export const Websocket = () => {
 					currentPongData._ballProperties._height * resolutionCoef!.width
 				);
 
-				let flipDisplayScore = (sideRender === "right") ? 0 : (((currentPongData._pongCanvasWidth * 4 / 5 - currentPongData._pongCanvasWidth / 20) * resolutionCoef!.width) - ((currentPongData._pongCanvasWidth / 4.2) * resolutionCoef!.width));
+				let flipDisplayScore = (sideRender === "right" || playerSide === "right") ? 0 : (((currentPongData._pongCanvasWidth * 4 / 5 - currentPongData._pongCanvasWidth / 20) * resolutionCoef!.width) - ((currentPongData._pongCanvasWidth / 4.2) * resolutionCoef!.width));
 
 				// draw scores
 				context.fillStyle = currentPongData._scoreAndCenterLineColor;

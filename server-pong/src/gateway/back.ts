@@ -283,12 +283,17 @@ export class MyGateway implements OnModuleInit {
 					const gameId = this.gameData.findIndex((e: GameData) => e.p1.p1Info.name === playerToWatch || e.p2.p2Info.name === playerToWatch)
 					if (gameId !== -1) {
 						let findGameId: string;
-						if (this.gameData[gameId].p1.p1Info.name === playerToWatch)
+						let findGameSide: string;
+						if (this.gameData[gameId].p1.p1Info.name === playerToWatch) {
 							findGameId = this.gameData[gameId].p1.p1Info.id;
-						else if (this.gameData[gameId].p2.p2Info.name === playerToWatch)
+							findGameSide = this.gameData[gameId].p1.p1Side;
+						}
+						else if (this.gameData[gameId].p2.p2Info.name === playerToWatch) {
 							findGameId = this.gameData[gameId].p2.p2Info.id;
+							findGameSide = this.gameData[gameId].p2.p2Side;
+						}
 
-						socket.emit('watchGame', findGameId);
+						socket.emit('watchGame', { playerIdBack: findGameId, playerSideBack: findGameSide });
 					}
 					else
 						socket.emit("noGameToWatch");
