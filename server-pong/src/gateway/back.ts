@@ -21,6 +21,7 @@ export class MyGateway implements OnModuleInit {
 		winWidth: 1920,
 		winHeight: 1080
 	}
+	frameRate: number = 15;
 	mode: string = "normal"; // *mode de jeu(normal, mode1 ou mode2)
 	ballSpeed: number = 2; // *vitesse de la balle (x10% en augmentant de 1)
 	player1Speed: number = 1; // *vitesse joueur 1 (x10% en augmentant de 1)
@@ -28,11 +29,11 @@ export class MyGateway implements OnModuleInit {
 	sizePlayer1: number = 1; // *largeur du joueur (x10% en augmentant de 1)
 	sizePlayer2: number = 1; // *largeur du joueur (x10% en augmentant de 1)
 	colorBackground: string = "#252930"; // *couleur background
-	colorPlayer1: string = "#FF14FB"; // *couleur joueur 1
-	colorPlayer2: string = "#FF14FB"; // *couleur joueur 2
+	colorPlayer1: string = "#141BFF"; // *couleur joueur 1 "#FF14FB"
+	colorPlayer2: string = "#F6751C"; // *couleur joueur 2 "#FF14FB"
 	colorBall: string = "#FF14FB"; // *couleur de la ball
 	colorScoreAndCenterLine: string = "#FF14FB"; // *couleur du score et de la ligne du milieu
-	endScore: number = 1; // *score avant la fin d'une partie
+	endScore: number = 11; // *score avant la fin d'une partie
 	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
 	gameData: GameData[] = []; // *store all games of Pong
@@ -461,7 +462,7 @@ export class MyGateway implements OnModuleInit {
 
 			let timerId = setInterval(() => {
 				this.server.emit('updateGame', this.gameData);
-			}, 15);
+			}, this.frameRate);
 		});
 
 	}
