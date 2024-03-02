@@ -33,13 +33,13 @@ export class MyGateway implements OnModuleInit {
 	colorPlayer2: string = "#F6751C"; // *couleur joueur 2 "#FF14FB"
 	colorBall: string = "#FF14FB"; // *couleur de la ball
 	colorScoreAndCenterLine: string = "#FF14FB"; // *couleur du score et de la ligne du milieu
-	endScore: number = 11; // *score avant la fin d'une partie
+	endScore: number = 1; // *score avant la fin d'une partie
 	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
-	gameData: GameData[] = []; // *store all games of Pong
+	gameData: GameData[] = []; // *stocke tous les parties de pong
 	playersList: { id: string, name: string }[] = []; // *matchmaking queue
 	privatePlayersList: { [inviteCode: string]: { id: string, name: string }[] } = {}; // *private matchmaking queue
-	namesDb: { id: string, name: string }[] = []; // *store all names before searching a player
+	namesDb: { id: string, name: string }[] = []; // *stocke tous les noms avant de pouvoir jouer
 
 
 	onModuleInit() {
@@ -118,8 +118,9 @@ export class MyGateway implements OnModuleInit {
 			})
 
 			socket.on("deletePrivateGame", (inviteCode: string) => {
-				if (this.privatePlayersList[inviteCode] !== undefined)
+				if (this.privatePlayersList[inviteCode] !== undefined) {
 					delete this.privatePlayersList[inviteCode];
+				}
 			})
 
 			socket.on('updateGame', (gameDataFront: GameData) => {
@@ -191,10 +192,14 @@ export class MyGateway implements OnModuleInit {
 							this.gameData.splice(idGame, 1);
 							this.server.emit("found", this.gameData[idGame]);
 						}
-						// else if (this.gameData[idGame].pongData._player1Properties._retry === 2 ||
-						// 	this.gameData[idGame].pongData._player2Properties._retry === 2)
-						// 	this.server.emit("playerDisconnetionRetry", this.gameData[idGame]);
 					}
+				}
+			})
+
+			socket.on("deletePlayerPrivateList", (info: { name: string | null, playerCode: string }) => {
+				const removePongId = this.privatePlayersList[info.playerCode].findIndex((element: { id: string, name: string }) => element.name === info.name);
+				if (removePongId !== -1) {
+					this.privatePlayersList[info.playerCode].splice(removePongId, 1);
 				}
 			})
 
@@ -271,7 +276,6 @@ export class MyGateway implements OnModuleInit {
 
 						this.server.emit("found", PlayersObj);
 					}
-					// socket.emit("putLoadingPage");
 				}
 			})
 
@@ -339,7 +343,6 @@ export class MyGateway implements OnModuleInit {
 									resetGame(1, currentGame.pongData);
 								}
 								else {
-									//TODO probleme2: a changer pour avertir si joueur en face est partie
 									currentGame.pongData._ballProperties._x = currentGame.pongData._pongCanvasWidth / 2;
 									currentGame.pongData._ballProperties._y = currentGame.pongData._pongCanvasHeight / 2;
 									currentGame.pongData._ballProperties._speedX = 0;
@@ -359,7 +362,6 @@ export class MyGateway implements OnModuleInit {
 									resetGame(-1, currentGame.pongData);
 								}
 								else {
-									//TODO probleme2: a changer pour avertir si joueur en face est partie
 									currentGame.pongData._ballProperties._x = currentGame.pongData._pongCanvasWidth / 2;
 									currentGame.pongData._ballProperties._y = currentGame.pongData._pongCanvasHeight / 2;
 									currentGame.pongData._ballProperties._speedX = 0;

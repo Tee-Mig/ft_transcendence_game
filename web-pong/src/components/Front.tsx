@@ -4,7 +4,6 @@ import { GameData } from "../../../server-pong/dist/types/types";
 import Button from "./Button";
 import { checkBallBoundsY, checkBallCollision, resetGame } from "../pongFunctions/pongFunctions";
 import Input from "./Input";
-import { textSpanContainsTextSpan } from "typescript";
 
 export const Websocket = () => {
 
@@ -36,7 +35,7 @@ export const Websocket = () => {
 		s: { isPressed: false }
 	});
 
-	// variables pour regler lags entre serveur et client
+	// *variables pour regler lags entre serveur et client
 	let playerInputsPlayer1: { sequenceNumberPlayer: number, dy: number }[] = [];
 	let playerInputsPlayer2: { sequenceNumberPlayer: number, dy: number }[] = [];
 	let sequenceNumberPlayer1: number = 0;
@@ -60,7 +59,7 @@ export const Websocket = () => {
 	const [gameId, setGameId] = useState<string>("Generate a game id");
 	let [now, setNow] = useState<number>(0);
 	let inviteCode: string = "null";
-	const limitTimeBetweenCode: number = 2 * 60000; // 2 minutes
+	const limitTimeBetweenCode: number = 60000; // 1 minute entre 2 codes
 	let [playerToWatch, setPlayerToWatch] = useState<string | undefined>();
 	let playerId: string | null = null;
 	let [playerSide, setPlayerSide] = useState<string | null>(null);
@@ -74,7 +73,6 @@ export const Websocket = () => {
 	let [colorBack2Render, setColorBack2Render] = useState<number>(colorBack2);
 	let [colorBack3Render, setColorBack3Render] = useState<number>(colorBack3);
 
-	// TODO mettre image localement ? car pas reussi a charger localement
 	const loadingImg = 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExemxnNm9rMXJ3aGl4YW1tYzl1eHN2eHc0bHd1ZnR0ODN0emhkd2N3byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vbeNMLuswd7RR25lah/giphy.gif';
 	const jamCat = 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOXQ1NWcyNDhnemxwZG81MTczdjlkNzg4czA5bjRqMnN3b3Z3bXI5eiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/bRTe2TGxczPVH50vxO/giphy.webp';
 
@@ -114,7 +112,6 @@ export const Websocket = () => {
 			}
 		})
 
-		// todo regler ici !!!!!!!!!!!!!!!!!!!
 		socket.on('watchGame', (info: { playerIdBack: string, playerSideBack: string }) => {
 
 			console.log("playerIdBack = ");
@@ -225,11 +222,6 @@ export const Websocket = () => {
 			alert("No game to watch");
 		})
 
-		// socket.on("putLoadingPage", () => {
-		// 	setLoadingPage(true);
-		// 	setSearchInput(false);
-		// })
-
 		socket.on("playerDisconnetion", (gameDataBack: GameData) => {
 			if (gameDataBack !== null) {
 				if ((gameDataBack!.p1!.p1Info.id === socket.id || gameDataBack!.p2!.p2Info.id === socket.id || playerId !== null)) {
@@ -280,7 +272,6 @@ export const Websocket = () => {
 			socket.off('nameAlreadyUsed');
 			socket.off('nameNotAlreadyUsed');
 			socket.off('playerNotFound');
-			// socket.off('putLoadingPage');
 			socket.off('noGameToWatch');
 			socket.off('disconnectPlayer');
 			socket.off('playerDisconnetion');
@@ -328,10 +319,12 @@ export const Websocket = () => {
 		setSearchInput(true);
 		setLoadingPage(false);
 		if (playerCode !== null) {
-			setGameId("Generate a game id");
-			socket.emit("deletePrivateGame", playerCode);
+			let obj: { name: string | null, playerCode: string } = {
+				name: name,
+				playerCode: playerCode
+			}
+			socket.emit("deletePlayerPrivateList", obj);
 			setPlayerCode(null);
-			setNow(0);
 		}
 		socket.emit('cancelSearch');
 	}
@@ -381,11 +374,9 @@ export const Websocket = () => {
 	}
 
 	function generateGameId() {
-		console.log("now === ");
-		console.log(now);
 		if (Date.now() > now + limitTimeBetweenCode || now === 0) {
 			if (gameId !== "Generate a game id")
-				socket.emit("deletePrivateGame", { inviteCode });
+				socket.emit("deletePrivateGame", gameId);
 			setNow(Date.now());
 			inviteCode = genStringInviteCode(15);
 			setGameId(inviteCode);
@@ -402,7 +393,7 @@ export const Websocket = () => {
 			socket.emit("createPrivateGame", obj);
 		}
 		else {
-			alert("You need to wait before generating a new code(" + (Math.round(((limitTimeBetweenCode - (Date.now() - now)) / 1000 / 60))) + " minute(s))");
+			alert("You need to wait before generating a new code(" + Math.round(Math.round((now + limitTimeBetweenCode) - Date.now()) / 1000) + " secondes(s))");
 		}
 	}
 
@@ -562,16 +553,13 @@ export const Websocket = () => {
 				}
 			}
 			if (contextJs !== null) {
-				// console.log(`rgb(${colorBack1}, ${colorBack2}, ${colorBack3})`);
 				setColorBack1Render(colorBack1);
 				setColorBack2Render(colorBack2);
 				setColorBack3Render(colorBack3);
-				// 	contextJs.fillStyle = `rgb(${colorBack1}, ${colorBack2}, ${colorBack3})`;
 			}
 		}
 	}
 
-	// todo a remettre
 	useEffect(() => {
 		const changeBack = setInterval(changeBackgroundColor, 500);
 
