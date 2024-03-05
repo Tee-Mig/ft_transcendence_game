@@ -332,7 +332,11 @@ export const Websocket = () => {
 	function searchPlayer() {
 		setLoadingPage(true);
 		setSearchInput(false);
-		socket.emit('searchPlayer', name);
+		let obj: { name: string | null, mode: string } = {
+			name: name,
+			mode: mode
+		}
+		socket.emit('searchPlayer', obj);
 	}
 
 	function changeMode() {
@@ -365,7 +369,7 @@ export const Websocket = () => {
 				} =
 			{
 				inviteCode: playerCode,
-				name: name
+				name: name,
 			}
 			setLoadingPage(true);
 			setSearchInput(false);
@@ -389,15 +393,14 @@ export const Websocket = () => {
 			setNow(Date.now());
 			inviteCode = genStringInviteCode(15);
 			setGameId(inviteCode);
-
 			let obj:
 				{
 					inviteCode: string,
-					name: string | null
+					mode: string
 				} =
 			{
 				inviteCode: inviteCode,
-				name: name
+				mode: mode
 			}
 			socket.emit("createPrivateGame", obj);
 		}

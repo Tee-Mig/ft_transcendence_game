@@ -21,7 +21,7 @@ export class MyGateway implements OnModuleInit {
 		winHeight: 1080
 	}
 	frameRate: number = 15;
-	mode: string = "normal"; // *mode de jeu(normal, mode1 ou mode2)
+	// mode: string = "normal"; // *mode de jeu(normal, mode1 ou mode2)
 	ballSpeed: number = 2; // *vitesse de la balle (x10% en augmentant de 1)
 	player1Speed: number = 1; // *vitesse joueur 1 (x10% en augmentant de 1)
 	player2Speed: number = 1; // *vitesse joueur 2 (x10% en augmentant de 1)
@@ -35,9 +35,9 @@ export class MyGateway implements OnModuleInit {
 	endScore: number = 5; // *score avant la fin d'une partie
 	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
-	gameData: GameData[] = []; // *stocke tous les parties de pong
-	playersList: { id: string, name: string }[] = []; // *matchmaking queue
-	privatePlayersList: { [inviteCode: string]: { id: string, name: string }[] } = {}; // *private matchmaking queue
+	gameData: GameData[] = []; // *stocke toutes les parties de pong
+	playersList: { [mode: string]: { id: string, name: string }[] } = {}; // *matchmaking queue
+	privatePlayersList: { [inviteCode: string]: { [mode: string]: { id: string, name: string }[] } } = {} // *private matchmaking queue
 	namesDb: { id: string, name: string }[] = []; // *stocke tous les noms avant de pouvoir jouer
 
 
@@ -56,17 +56,20 @@ export class MyGateway implements OnModuleInit {
 			})
 
 
-			socket.on('searchPlayer', (name: string) => {
+			socket.on('searchPlayer', (info: { name: string, mode: string }) => {
 				let infoPlayer:
 					{
 						id: string,
 						name: string
 					} = {
 					id: socket.id,
-					name: name
+					name: info.name
 				}
-				this.playersList.push(infoPlayer);
-				if (this.playersList.length >= 2) {
+
+				if (this.playersList[info.mode] === undefined)
+					this.playersList[info.mode] = [];
+				this.playersList[info.mode].push(infoPlayer);
+				if (this.playersList[info.mode].length >= 2) {
 
 
 					let p1Obj: {
@@ -74,7 +77,7 @@ export class MyGateway implements OnModuleInit {
 						p1Side: string,
 						sequenceNumber: number,
 					} = {
-						p1Info: this.playersList[0],
+						p1Info: this.playersList[info.mode][0],
 						p1Side: "right",
 						sequenceNumber: 0,
 					}
@@ -83,7 +86,7 @@ export class MyGateway implements OnModuleInit {
 						p2Side: string,
 						sequenceNumber: number,
 					} = {
-						p2Info: this.playersList[1],
+						p2Info: this.playersList[info.mode][1],
 						p2Side: "left",
 						sequenceNumber: 0,
 					}
@@ -94,7 +97,7 @@ export class MyGateway implements OnModuleInit {
 						pongData: new PongData(
 							this.defaultWindowResolution.winWidth,
 							this.defaultWindowResolution.winHeight,
-							this.mode,
+							info.mode,
 							this.ballSpeed,
 							this.player1Speed,
 							this.player2Speed,
@@ -110,7 +113,9 @@ export class MyGateway implements OnModuleInit {
 						)
 					}
 					this.gameData.push(PlayersObj);
-					this.playersList.splice(0, 2);
+					this.playersList[info.mode].splice(0, 2);
+					if (this.playersList[info.mode].length == 0)
+						delete this.playersList[info.mode];
 
 					this.server.emit("found", PlayersObj);
 				}
@@ -172,7 +177,7 @@ export class MyGateway implements OnModuleInit {
 								pongData: new PongData(
 									this.defaultWindowResolution.winWidth,
 									this.defaultWindowResolution.winHeight,
-									this.mode,
+									gameDataFront.pongData._mode,
 									this.ballSpeed,
 									this.player1Speed,
 									this.player2Speed,
@@ -196,22 +201,28 @@ export class MyGateway implements OnModuleInit {
 			})
 
 			socket.on("deletePlayerPrivateList", (info: { name: string | null, playerCode: string }) => {
-				const removePongId = this.privatePlayersList[info.playerCode].findIndex((element: { id: string, name: string }) => element.name === info.name);
-				if (removePongId !== -1) {
-					this.privatePlayersList[info.playerCode].splice(removePongId, 1);
+				for (const [key, value] of Object.entries(this.privatePlayersList)) {
+					const currentMode = Object.keys(this.privatePlayersList[key])[0];
+					const removePlayerListId = this.privatePlayersList[key][currentMode].findIndex((element: { id: string, name: string }) => element.id === socket.id);
+					if (removePlayerListId !== -1) {
+						this.privatePlayersList[key][currentMode].splice(removePlayerListId, 1);
+						if (this.privatePlayersList[key][currentMode].length === 0)
+							delete this.privatePlayersList[key];
+					}
 				}
 			})
 
 			socket.on("createPrivateGame", (e: {
 				inviteCode: string,
-				name: string
+				mode: string
 			}) => {
-				this.privatePlayersList[e.inviteCode] = [];
+				this.privatePlayersList[e.inviteCode] = {}
+				this.privatePlayersList[e.inviteCode][e.mode] = [];
 			})
 
 			socket.on("foundPrivate", (e: {
 				inviteCode: string,
-				name: string
+				name: string,
 			}) => {
 				if (e.inviteCode === null)
 					socket.emit("codeNotValid");
@@ -227,15 +238,18 @@ export class MyGateway implements OnModuleInit {
 						id: socket.id,
 						name: e.name
 					}
-					this.privatePlayersList[e.inviteCode].push(infoPlayer);
 
-					if (this.privatePlayersList[e.inviteCode].length >= 2) {
+					const currentMode: string = Object.keys(this.privatePlayersList[e.inviteCode])[0];
+
+					this.privatePlayersList[e.inviteCode][currentMode].push(infoPlayer);
+
+					if (this.privatePlayersList[e.inviteCode][currentMode].length >= 2) {
 						let p1Obj: {
 							p1Info: { id: string, name: string },
 							p1Side: string,
 							sequenceNumber: number,
 						} = {
-							p1Info: this.privatePlayersList[e.inviteCode][0],
+							p1Info: this.privatePlayersList[e.inviteCode][currentMode][0],
 							p1Side: "right",
 							sequenceNumber: 0,
 						}
@@ -244,7 +258,7 @@ export class MyGateway implements OnModuleInit {
 							p2Side: string,
 							sequenceNumber: number,
 						} = {
-							p2Info: this.privatePlayersList[e.inviteCode][1],
+							p2Info: this.privatePlayersList[e.inviteCode][currentMode][1],
 							p2Side: "left",
 							sequenceNumber: 0,
 						}
@@ -255,7 +269,7 @@ export class MyGateway implements OnModuleInit {
 							pongData: new PongData(
 								this.defaultWindowResolution.winWidth,
 								this.defaultWindowResolution.winHeight,
-								this.mode,
+								currentMode,
 								this.ballSpeed,
 								this.player1Speed,
 								this.player2Speed,
@@ -414,9 +428,13 @@ export class MyGateway implements OnModuleInit {
 
 			socket.on("cancelSearch", () => {
 
-				const removePlayerListId = this.playersList.findIndex((element: { id: string, name: string }) => element.id === socket.id);
-				if (removePlayerListId !== -1) {
-					this.playersList.splice(removePlayerListId, 1);
+				for (const [key, value] of Object.entries(this.playersList)) {
+					const removePlayerListId = this.playersList[key].findIndex((element: { id: string, name: string }) => element.id === socket.id);
+					if (removePlayerListId !== -1) {
+						this.playersList[key].splice(removePlayerListId, 1);
+						if (this.playersList[key].length === 0)
+							delete this.playersList[key];
+					}
 				}
 			})
 
@@ -441,8 +459,11 @@ export class MyGateway implements OnModuleInit {
 
 				// * tests pour voir si je supprime bien tout lors de la deconnexion d'un client
 				// console.log(`number of active game = ${this.gameData.length}`)
-				// console.log(`number of player in queue = ${this.playersList.length}`)
 				// console.log(`number of client with name = ${this.namesDb.length}`)
+				// console.log("playersList === ");
+				// console.log(this.playersList);
+				// console.log("privatePlayersList === ");
+				// console.log(this.privatePlayersList);
 
 				// *enleve la partie de pong
 				let gameRemoved = null
@@ -452,9 +473,24 @@ export class MyGateway implements OnModuleInit {
 				}
 
 				// *enleve personne si dans la queue
-				const removePlayerListId = this.playersList.findIndex((element: { id: string, name: string }) => element.id === socket.id);
-				if (removePlayerListId !== -1) {
-					this.playersList.splice(removePlayerListId, 1);
+				for (const [key, value] of Object.entries(this.playersList)) {
+					const removePlayerListId = this.playersList[key].findIndex((element: { id: string, name: string }) => element.id === socket.id);
+					if (removePlayerListId !== -1) {
+						this.playersList[key].splice(removePlayerListId, 1);
+						if (this.playersList[key].length === 0)
+							delete this.playersList[key];
+					}
+				}
+
+				// *enleve personne si dans la queue privee
+				for (const [key, value] of Object.entries(this.privatePlayersList)) {
+					const currentMode = Object.keys(this.privatePlayersList[key])[0];
+					const removePlayerListId = this.privatePlayersList[key][currentMode].findIndex((element: { id: string, name: string }) => element.id === socket.id);
+					if (removePlayerListId !== -1) {
+						this.privatePlayersList[key][currentMode].splice(removePlayerListId, 1);
+						if (this.privatePlayersList[key][currentMode].length === 0)
+							delete this.privatePlayersList[key];
+					}
 				}
 
 				// *enleve nom de la db
