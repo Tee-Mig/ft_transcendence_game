@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+.mainLayer {
+	display: grid;
+	grid-template-columns: 1fr;
+	grid-template-rows: 1fr;
+	place-items: center;
+}
+
+.putNameDiv,
+#inputName,
+.searchDiv,
+.loadingPage,
+.quitDiv {
+	text-align: center;
+}
+
+#inputName {
+	margin: 1.5rem;
+}
+
+#buttonName {
+	margin: 1rem;
+}
+
+#gameMode {
+	margin-top: 0.5rem;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+
+#inputGameId {
+	text-align: center;
+	margin-top: 3.5rem;
+	margin-bottom: 0.5rem;
+	margin-left: 0.5rem;
+	margin-right: 0.5rem;
+}
+
+#buttonGameId {
+	margin: 0.5rem;
+}
+
 .button {
 	border: 2px solid rgb(119, 61, 150);
 	border-radius: 0.7rem;
@@ -16,45 +57,12 @@
 	background-color: rgb(119, 61, 150);
 }
 
-.input{
+.input {
 	border-radius: 0.7rem;
 	padding-left: 3rem;
 	padding-right: 3rem;
 	padding-top: 0.3rem;
 	padding-bottom: 0.3rem;
-}
-
-.putNameDiv {
-	text-align: center;
-}
-
-.searchDiv {
-	text-align: center;
-}
-
-.loadingPage {
-	text-align: center;
-}
-
-#buttonName {
-	margin: 1rem;
-}
-
-#inputName {
-	text-align: center;
-	margin: 1.5rem;
-}
-
-#inputGameId {
-	text-align: center;
-	margin-top: 4rem;
-	margin-bottom: 0.5rem;
-	margin-left: 0.5rem;
-	margin-right: 0.5rem;
-}
-
-#buttonGameId {
-	margin: 0.5rem;
 }
 
 #inputWatchGame {
@@ -69,31 +77,39 @@
 	margin: 0.5rem;
 }
 
-#buttonSearchPlayer {
-}
-
 #loadingImg {
-	width: 25%;
-	margin: auto;
+	width: 50%;
+	margin: 25px;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 #buttonCancel {
 	margin: 1rem;
 }
 
-#okEndPong, #okOpponentLeft {
+#okEndPong,
+#okOpponentLeft {
 	margin-bottom: 1.5rem;
 	margin-top: 1.5rem;
 }
 
+.searchDiv {
+	grid-area: 1 / 1;
+	z-index: 0;
+}
+
+.pongDiv {
+	grid-area: 1 / 1;
+	z-index: 0;
+}
+
 .jamCatDiv {
-	position: relative;
-	/* z-index: 5; */
-	width: 20%;
-	margin: auto;
-	opacity: 0.3;
-	/* width: 30%;
-	height: 35%; */
+	grid-area: 1 / 1;
+	z-index: 1;
+	width: 30%;
+	opacity: 0.25;
+	margin-top: -5%;
 }
 
 #copyButton {
@@ -103,22 +119,28 @@
 	margin-left: 0.4rem;
 }
 
-#messageOnCenter, #messageEndPong
-{
-	position: relative;
+.messageEndPong {
+	z-index: 2;
+}
+
+.messageOnCenter,
+.gameIsFinishedDiv {
+	z-index: 3;
+}
+
+.messageOnCenter,
+.messageEndPong,
+.gameIsFinishedDiv {
 	text-align: center;
+	grid-area: 1 / 1;
 	background-image: linear-gradient(70deg, rgba(104, 40, 108, 1), rgba(173, 137, 177, 0.9));
 	border: 2px solid rgb(119, 61, 150);
 	border-radius: 15px;
 
 	padding-top: 1rem;
 	padding-bottom: 1rem;
-	/* margin-left: 5rem; */
-	/* margin-right: 5rem; */
 	width: 70%;
 	margin: auto;
-	margin-top: -26rem;
-
 }
 
 #pongCanvas {
@@ -127,12 +149,9 @@
 	margin-bottom: 5%;
 }
 
-#yesButton, #noButton {
+#yesButton,
+#noButton {
 	margin: 0.4rem;
-}
-
-.quitDiv {
-	text-align: center;
 }
 
 #buttonQuit {

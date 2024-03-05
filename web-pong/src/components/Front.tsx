@@ -21,6 +21,7 @@ export const Websocket = () => {
 	let contextJs: CanvasRenderingContext2D | null = null;
 
 	// *variables jeu
+	const [mode, setMode] = useState<string>("normal"); // normal, mode1, mode2
 	let side: string | null = null;
 	const [sideRender, setSideRender] = useState<string | null>(null);
 	let [gameDataRender, setGameDataRender] = useState<GameData | null>(null);
@@ -101,23 +102,22 @@ export const Websocket = () => {
 					height: windowResolution.winHeight / gameDataBack!.pongData._pongCanvasHeight
 				});
 
-				gameDataFront = gameDataBack;
-
-				setGameDataRender(gameDataBack);
 				if (gameDataBack.pongData._mode === "mode2")
 					setRainbowMode(true);
+				else
+					setRainbowMode(false);
+				gameDataFront = gameDataBack;
+				setGameDataRender(gameDataBack);
 				setPong(true);
 				setLoadingPage(false);
 				setResultOk(false);
 			}
 		})
 
-		socket.on('watchGame', (info: { playerIdBack: string, playerSideBack: string }) => {
+		socket.on('watchGame', (info: { playerIdBack: string, playerSideBack: string, gameMode: string }) => {
 
-			console.log("playerIdBack = ");
-			console.log(info.playerIdBack);
-			console.log("playerSideBack = ");
-			console.log(info.playerSideBack);
+			if (info.gameMode == "mode2")
+				setRainbowMode(true);
 			playerId = info.playerIdBack;
 			setPlayerSide(info.playerSideBack);
 			setPlayerIdRender(playerId);
@@ -333,6 +333,15 @@ export const Websocket = () => {
 		setLoadingPage(true);
 		setSearchInput(false);
 		socket.emit('searchPlayer', name);
+	}
+
+	function changeMode() {
+		if (mode === "normal")
+			setMode("mode1");
+		else if (mode === "mode1")
+			setMode("mode2");
+		else
+			setMode("normal");
 	}
 
 	function confirmName() {
@@ -609,10 +618,6 @@ export const Websocket = () => {
 				let currentPongData = gameDataRender.pongData;
 				context.clearRect(0, 0, currentPongData._pongCanvasWidth * resolutionCoef!.width, currentPongData._pongCanvasHeight * resolutionCoef!.height);
 
-				if (sideRender === null) {
-					console.log("player side ===")
-					console.log(playerSide);
-				}
 				// color background
 				if (currentPongData._mode !== "mode2") {
 					context.fillStyle = currentPongData._colorBackground;
@@ -734,6 +739,15 @@ export const Websocket = () => {
 							click={searchPlayer}
 						/>
 						<br />
+						{
+							<Button
+								id="gameMode"
+								className="button"
+								text={mode}
+								click={changeMode}
+							/>
+						}
+						<br />
 						<Input
 							id="inputGameId"
 							placeholder="Game id"
@@ -777,7 +791,7 @@ export const Websocket = () => {
 							}
 						</div>
 						{
-							<div className="inputRegion">
+							<div className="watchGame">
 								<Input
 									id="inputWatchGame"
 									placeholder="Player's name"
@@ -811,13 +825,17 @@ export const Websocket = () => {
 					</div>
 				}
 
-				<canvas
-					id="pongCanvas"
-					hidden={!pong}
-					ref={canvasRef}
-					width={window.innerWidth}
-					height={window.innerHeight}
-				/>
+				{
+					<div className="pongDiv">
+						<canvas
+							id="pongCanvas"
+							hidden={!pong}
+							ref={canvasRef}
+							width={window.innerWidth}
+							height={window.innerHeight}
+						/>
+					</div>
+				}
 
 				{
 					// todo mettre le chat par dessus le canvas ICI
@@ -842,7 +860,7 @@ export const Websocket = () => {
 				{
 					// todo mettre a jour css
 					pongResult &&
-					<div id="messageEndPong">
+					<div className="messageEndPong">
 						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">{pongResult} !</h1>
 						{
 							!playerLeft && !resultOk && <div>
@@ -860,7 +878,7 @@ export const Websocket = () => {
 				{
 					// todo mettre a jour css
 					playerLeft &&
-					<div id="messageOnCenter">
+					<div className="messageOnCenter">
 						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">Your opponent left</h1>
 						<Button id="okOpponentLeft" className="button" text="ok" click={() => (setPlayerLeft(false), setResultOk(true))} />
 					</div>
@@ -869,7 +887,7 @@ export const Websocket = () => {
 				{
 					// todo mettre a jour css
 					endBattleWatch &&
-					<div id="messageOnCenter">
+					<div className="gameIsFinishedDiv">
 						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">The game is finished</h1>
 						<Button id="endBattleWatch" className="button" text="ok" click={() => (setEndBattleWatch(false))} />
 					</div>

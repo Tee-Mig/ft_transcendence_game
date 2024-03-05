@@ -5,7 +5,6 @@ import { GameData } from '../types/types'
 import { PongData } from "src/classes/Classes";
 import { checkBallBoundsY, checkBallCollision, resetGame, updateDirectionPlayer1, updateDirectionPlayer2, whereBallHitPlayer } from "src/pongFunctions/pongFunctions";
 import { setInterval } from "timers";
-import { Interval } from "@nestjs/schedule";
 
 
 @WebSocketGateway({
@@ -33,7 +32,7 @@ export class MyGateway implements OnModuleInit {
 	colorPlayer2: string = "#F6751C"; // *couleur joueur 2 "#FF14FB"
 	colorBall: string = "#FF14FB"; // *couleur de la ball
 	colorScoreAndCenterLine: string = "#FF14FB"; // *couleur du score et de la ligne du milieu
-	endScore: number = 1; // *score avant la fin d'une partie
+	endScore: number = 5; // *score avant la fin d'une partie
 	ballDirectionBeginning: number = 1; // *dans quelle direction va la balle au debut
 
 	gameData: GameData[] = []; // *stocke tous les parties de pong
@@ -297,7 +296,7 @@ export class MyGateway implements OnModuleInit {
 							findGameSide = this.gameData[gameId].p2.p2Side;
 						}
 
-						socket.emit('watchGame', { playerIdBack: findGameId, playerSideBack: findGameSide });
+						socket.emit('watchGame', { playerIdBack: findGameId, playerSideBack: findGameSide, gameMode: this.gameData[gameId].pongData._mode });
 					}
 					else
 						socket.emit("noGameToWatch");
