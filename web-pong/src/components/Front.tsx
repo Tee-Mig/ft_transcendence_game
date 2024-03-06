@@ -60,7 +60,7 @@ export const Websocket = () => {
 	const [gameId, setGameId] = useState<string>("Generate a game id");
 	let [now, setNow] = useState<number>(0);
 	let inviteCode: string = "null";
-	const limitTimeBetweenCode: number = 5000; // 1 minute entre 2 codes
+	const limitTimeBetweenCode: number = 60000; // 1 minute entre 2 codes
 	let [playerToWatch, setPlayerToWatch] = useState<string | undefined>();
 	let playerId: string | null = null;
 	let [playerSide, setPlayerSide] = useState<string | null>(null);
