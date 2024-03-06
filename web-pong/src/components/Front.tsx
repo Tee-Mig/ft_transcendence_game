@@ -60,7 +60,7 @@ export const Websocket = () => {
 	const [gameId, setGameId] = useState<string>("Generate a game id");
 	let [now, setNow] = useState<number>(0);
 	let inviteCode: string = "null";
-	const limitTimeBetweenCode: number = 60000; // 1 minute entre 2 codes
+	const limitTimeBetweenCode: number = 5000; // 1 minute entre 2 codes
 	let [playerToWatch, setPlayerToWatch] = useState<string | undefined>();
 	let playerId: string | null = null;
 	let [playerSide, setPlayerSide] = useState<string | null>(null);
@@ -236,9 +236,10 @@ export const Websocket = () => {
 					}
 					else
 						setPlayerLeft(true);
+
+					socket.emit("removeGameBackend", gameDataBack);
 				}
 			}
-			socket.emit("removeGameBackend", gameDataBack);
 		})
 
 		socket.on("disconnectPlayer", (playerIdBack: string) => {
@@ -841,7 +842,6 @@ export const Websocket = () => {
 				}
 
 				{
-					// todo mettre le chat par dessus le canvas ICI
 					!searchInput && rainbowMode && pong &&
 					<div className="jamCatDiv">
 						<img src={jamCat} id="dancingCat"></img>
@@ -861,7 +861,6 @@ export const Websocket = () => {
 				}
 
 				{
-					// todo mettre a jour css
 					pongResult &&
 					<div className="messageEndPong">
 						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">{pongResult} !</h1>
@@ -879,7 +878,6 @@ export const Websocket = () => {
 					</div>
 				}
 				{
-					// todo mettre a jour css
 					playerLeft &&
 					<div className="messageOnCenter">
 						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">Your opponent left</h1>
@@ -888,7 +886,6 @@ export const Websocket = () => {
 				}
 
 				{
-					// todo mettre a jour css
 					endBattleWatch &&
 					<div className="gameIsFinishedDiv">
 						<h1 className="flex items-center text-3xl font-extrabold dark:text-white justify-center">The game is finished</h1>

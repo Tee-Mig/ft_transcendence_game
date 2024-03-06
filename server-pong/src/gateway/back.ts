@@ -21,7 +21,6 @@ export class MyGateway implements OnModuleInit {
 		winHeight: 1080
 	}
 	frameRate: number = 15;
-	// mode: string = "normal"; // *mode de jeu(normal, mode1 ou mode2)
 	ballSpeed: number = 2; // *vitesse de la balle (x10% en augmentant de 1)
 	player1Speed: number = 1; // *vitesse joueur 1 (x10% en augmentant de 1)
 	player2Speed: number = 1; // *vitesse joueur 2 (x10% en augmentant de 1)
@@ -206,8 +205,6 @@ export class MyGateway implements OnModuleInit {
 					const removePlayerListId = this.privatePlayersList[key][currentMode].findIndex((element: { id: string, name: string }) => element.id === socket.id);
 					if (removePlayerListId !== -1) {
 						this.privatePlayersList[key][currentMode].splice(removePlayerListId, 1);
-						if (this.privatePlayersList[key][currentMode].length === 0)
-							delete this.privatePlayersList[key];
 					}
 				}
 			})
@@ -460,9 +457,9 @@ export class MyGateway implements OnModuleInit {
 				// * tests pour voir si je supprime bien tout lors de la deconnexion d'un client
 				// console.log(`number of active game = ${this.gameData.length}`)
 				// console.log(`number of client with name = ${this.namesDb.length}`)
-				// console.log("playersList === ");
+				// console.log("playersList == ");
 				// console.log(this.playersList);
-				// console.log("privatePlayersList === ");
+				// console.log("privatePlayersList == ");
 				// console.log(this.privatePlayersList);
 
 				// *enleve la partie de pong
